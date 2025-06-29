@@ -111,8 +111,13 @@ export const fetchTasks = async (projectId, boardId, columnId) => {
 
 export const createTask = async (projectId, boardId, columnId, taskData) => {
   const response = await api.post(
-    `/projects/${projectId}/boards/${boardId}/columns/${columnId}/tasks`,
-    taskData
+    `/tasks`,
+    {
+      ...taskData,
+      projectId,
+      boardId,
+      columnId
+    }
   );
   return response.data;
 };

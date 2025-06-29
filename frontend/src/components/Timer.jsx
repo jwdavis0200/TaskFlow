@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  startTimer,
-  stopTimer,
-  resetTimer,
-  isTimerRunning,
-  getRemainingTime,
-} from "../utils/timer";
+import React, { useState, useEffect, useRef } from "react";
+import { getTimer, removeTimer } from "../utils/timer";
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import { PlayArrow, Pause, Replay } from "@mui/icons-material";
@@ -90,10 +84,31 @@ const Button = styled.button`
 
 const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
   const [time, setTime] = useState(initialTime); // time in milliseconds
-  const [isRunning, setIsRunning] = useState(isTimerRunning());
+  const [isRunning, setIsRunning] = useState(false);
+  const timerRef = useRef(null);
 
+  // Initialize timer instance and cleanup on unmount
+  useEffect(() => {
+    if (!taskId) return;
+    
+    timerRef.current = getTimer(taskId);
+    setTime(initialTime);
+    setIsRunning(timerRef.current.isRunning());
+
+    // Cleanup on unmount
+    return () => {
+      if (timerRef.current) {
+        removeTimer(taskId);
+      }
+    };
+  }, [taskId, initialTime]);
+
+  // Update local state when initialTime changes
   useEffect(() => {
     setTime(initialTime);
+    if (timerRef.current && !timerRef.current.isRunning()) {
+      timerRef.current.timeSpent = initialTime;
+    }
   }, [initialTime]);
 
   const formatTime = (ms) => {
@@ -108,33 +123,37 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
   };
 
   const handleStart = () => {
-    if (!isRunning) {
-      startTimer(
-        getRemainingTime() || time,
-        (remainingTime) => {
-          setTime(remainingTime);
-          if (onTimeUpdate) {
-            onTimeUpdate(taskId, remainingTime);
-          }
-        },
-        () => {
-          setIsRunning(false);
-          if (onTimerComplete) {
-            onTimerComplete(taskId);
-          }
+    if (!timerRef.current || isRunning) return;
+
+    timerRef.current.start(
+      time,
+      (timeSpent) => {
+        setTime(timeSpent);
+        if (onTimeUpdate) {
+          onTimeUpdate(taskId, timeSpent);
         }
-      );
-      setIsRunning(true);
-    }
+      },
+      () => {
+        setIsRunning(false);
+        if (onTimerComplete) {
+          onTimerComplete(taskId);
+        }
+      }
+    );
+    setIsRunning(true);
   };
 
   const handleStop = () => {
-    stopTimer();
+    if (!timerRef.current) return;
+    
+    timerRef.current.stop();
     setIsRunning(false);
   };
 
   const handleReset = () => {
-    resetTimer();
+    if (!timerRef.current) return;
+    
+    timerRef.current.reset();
     setTime(0);
     setIsRunning(false);
     if (onTimeUpdate) {

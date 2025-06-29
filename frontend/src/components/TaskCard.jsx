@@ -133,7 +133,7 @@ const formatStatus = (status) => {
   }
 };
 
-const TaskCard = ({ task, onEdit, columnId }) => {
+const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "task",
     item: { id: task._id },
@@ -146,12 +146,19 @@ const TaskCard = ({ task, onEdit, columnId }) => {
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {
-    updateTask({ ...task, timeSpent: newTimeSpent, isRunning: true });
+    updateTask(projectId, boardId, columnId, taskId, {
+      ...task,
+      timeSpent: newTimeSpent,
+      isRunning: true
+    });
   };
 
   // Handler for timer completion from the Timer component
   const handleTimerComplete = (taskId) => {
-    updateTask({ ...task, isRunning: false });
+    updateTask(projectId, boardId, columnId, taskId, {
+      ...task,
+      isRunning: false
+    });
   };
 
   const formatDueDate = (dateString) => {
@@ -205,7 +212,7 @@ const TaskCard = ({ task, onEdit, columnId }) => {
 
       <TimerContainer>
         <Timer
-          taskId={task.id}
+          taskId={task._id}
           initialTime={task.timeSpent}
           onTimeUpdate={handleTimeUpdate}
           onTimerComplete={handleTimerComplete}

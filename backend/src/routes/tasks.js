@@ -30,6 +30,7 @@ router.post("/", async (req, res) => {
   const task = new Task({
     title: req.body.title,
     description: req.body.description,
+    project: req.body.projectId, // Map projectId to project field
     board: req.body.boardId, // Map boardId to board field
     column: req.body.columnId, // Map columnId to column field
     dueDate: req.body.dueDate,
@@ -114,11 +115,10 @@ router.patch("/:id", async (req, res) => {
 // DELETE one task
 router.delete("/:id", async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findByIdAndDelete(req.params.id);
     if (task == null) {
       return res.status(404).json({ message: "Cannot find task" });
     }
-    await task.remove();
     res.json({ message: "Deleted Task" });
   } catch (err) {
     res.status(500).json({ message: err.message });

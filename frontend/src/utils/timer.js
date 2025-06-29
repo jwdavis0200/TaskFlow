@@ -1,76 +1,165 @@
-// Timer logic for start, stop, and reset
-let timerId;
-let timeLeft;
-let running = false;
-let onUpdateCallback;
-let onCompleteCallback;
-
-/**
- * Starts the timer.
- * @param {number} duration - The duration of the timer in milliseconds.
- * @param {function} onUpdate - Callback function called every second with the remaining time.
- * @param {function} onComplete - Callback function called when the timer completes.
- */
-export function startTimer(duration, onUpdate, onComplete) {
-  if (running) {
-    console.warn("Timer is already running.");
-    return;
+// Timer class for per-task timer instances
+class TaskTimer {
+  constructor(taskId) {
+    this.taskId = taskId;
+    this.timerId = null;
+    this.timeSpent = 0; // Track time spent (counting up)
+    this.running = false;
+    this.onUpdateCallback = null;
+    this.onCompleteCallback = null;
   }
-  running = true;
-  timeLeft = duration;
-  onUpdateCallback = onUpdate;
-  onCompleteCallback = onComplete;
 
-  timerId = setInterval(() => {
-    timeLeft -= 1000;
-    if (onUpdateCallback) {
-      onUpdateCallback(timeLeft);
+  /**
+   * Starts the timer.
+   * @param {number} initialTime - The initial time spent in milliseconds.
+   * @param {function} onUpdate - Callback function called every second with the current time spent.
+   * @param {function} onComplete - Callback function called when the timer is manually stopped.
+   */
+  start(initialTime = 0, onUpdate, onComplete) {
+    if (this.running) {
+      console.warn(`Timer for task ${this.taskId} is already running.`);
+      return;
     }
+    
+    this.running = true;
+    this.timeSpent = initialTime;
+    this.onUpdateCallback = onUpdate;
+    this.onCompleteCallback = onComplete;
 
-    if (timeLeft <= 0) {
-      clearInterval(timerId);
-      running = false;
-      if (onCompleteCallback) {
-        onCompleteCallback();
+    this.timerId = setInterval(() => {
+      this.timeSpent += 1000; // Increment by 1 second
+      if (this.onUpdateCallback) {
+        this.onUpdateCallback(this.timeSpent);
+      }
+    }, 1000);
+  }
+
+  /**
+   * Stops the timer.
+   */
+  stop() {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.running = false;
+      this.timerId = null;
+      
+      if (this.onCompleteCallback) {
+        this.onCompleteCallback();
       }
     }
-  }, 1000);
+  }
+
+  /**
+   * Resets the timer.
+   */
+  reset() {
+    this.stop();
+    this.timeSpent = 0;
+    if (this.onUpdateCallback) {
+      this.onUpdateCallback(this.timeSpent);
+    }
+  }
+
+  /**
+   * Gets the current time spent.
+   * @returns {number} The time spent in milliseconds.
+   */
+  getTimeSpent() {
+    return this.timeSpent;
+  }
+
+  /**
+   * Checks if the timer is currently running.
+   * @returns {boolean} True if the timer is running, false otherwise.
+   */
+  isRunning() {
+    return this.running;
+  }
+
+  /**
+   * Cleanup method to be called when timer is no longer needed.
+   */
+  cleanup() {
+    this.stop();
+    this.onUpdateCallback = null;
+    this.onCompleteCallback = null;
+  }
+}
+
+// Timer registry to manage multiple timer instances
+const timerRegistry = new Map();
+
+/**
+ * Gets or creates a timer instance for a specific task.
+ * @param {string} taskId - The task ID.
+ * @returns {TaskTimer} The timer instance for the task.
+ */
+export function getTimer(taskId) {
+  if (!timerRegistry.has(taskId)) {
+    timerRegistry.set(taskId, new TaskTimer(taskId));
+  }
+  return timerRegistry.get(taskId);
 }
 
 /**
- * Stops the timer.
+ * Removes a timer instance for a specific task.
+ * @param {string} taskId - The task ID.
  */
+export function removeTimer(taskId) {
+  const timer = timerRegistry.get(taskId);
+  if (timer) {
+    timer.cleanup();
+    timerRegistry.delete(taskId);
+  }
+}
+
+/**
+ * Gets all active timers.
+ * @returns {Map} Map of taskId to timer instances.
+ */
+export function getActiveTimers() {
+  return new Map([...timerRegistry.entries()].filter(([_, timer]) => timer.isRunning()));
+}
+
+/**
+ * Cleanup all timers (useful for app cleanup).
+ */
+export function cleanupAllTimers() {
+  timerRegistry.forEach(timer => timer.cleanup());
+  timerRegistry.clear();
+}
+
+// Legacy API compatibility (for gradual migration)
+let defaultTimer = null;
+
+export function startTimer(duration, onUpdate, onComplete) {
+  console.warn("startTimer is deprecated. Use getTimer(taskId).start() instead.");
+  if (!defaultTimer) {
+    defaultTimer = new TaskTimer('default');
+  }
+  defaultTimer.start(duration, onUpdate, onComplete);
+}
+
 export function stopTimer() {
-  if (timerId) {
-    clearInterval(timerId);
-    running = false;
-    timerId = null;
+  console.warn("stopTimer is deprecated. Use getTimer(taskId).stop() instead.");
+  if (defaultTimer) {
+    defaultTimer.stop();
   }
 }
 
-/**
- * Resets the timer.
- */
 export function resetTimer() {
-  stopTimer();
-  timeLeft = 0;
-  if (onUpdateCallback) {
-    onUpdateCallback(timeLeft);
+  console.warn("resetTimer is deprecated. Use getTimer(taskId).reset() instead.");
+  if (defaultTimer) {
+    defaultTimer.reset();
   }
 }
 
-/**
- * Gets the current remaining time.
- * @returns {number} The remaining time in milliseconds.
- */
 export function getRemainingTime() {
-  return timeLeft;
+  console.warn("getRemainingTime is deprecated. Use getTimer(taskId).getTimeSpent() instead.");
+  return defaultTimer ? defaultTimer.getTimeSpent() : 0;
 }
 
-/**
- * Checks if the timer is currently running.
- * @returns {boolean} True if the timer is running, false otherwise.
- */
 export function isTimerRunning() {
-  return running;
+  console.warn("isTimerRunning is deprecated. Use getTimer(taskId).isRunning() instead.");
+  return defaultTimer ? defaultTimer.isRunning() : false;
 }

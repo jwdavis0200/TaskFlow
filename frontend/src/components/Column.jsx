@@ -136,6 +136,8 @@ const Column = ({ column, onEdit, projectId, boardId }) => {
               task={task}
               onEdit={onEdit}
               columnId={column._id}
+              projectId={projectId}
+              boardId={boardId}
             />
           ))
         ) : (
