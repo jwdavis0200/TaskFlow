@@ -346,9 +346,32 @@ export const useStore = create((set, get) => ({
   deleteTask: async (projectId, boardId, columnId, taskId) => {
     set({ loading: true, error: null });
     try {
-      await deleteTask(projectId, boardId, columnId, taskId);
+      await deleteTask(taskId);
       set((state) => ({
         tasks: state.tasks.filter((task) => task._id !== taskId),
+        boards: state.boards.map((board) =>
+          board._id === boardId
+            ? {
+                ...board,
+                columns: board.columns.map((column) =>
+                  column._id === columnId
+                    ? { ...column, tasks: column.tasks.filter((task) => task._id !== taskId) }
+                    : column
+                ),
+              }
+            : board
+        ),
+        selectedBoard:
+          state.selectedBoard && state.selectedBoard._id === boardId
+            ? {
+                ...state.selectedBoard,
+                columns: state.selectedBoard.columns.map((column) =>
+                  column._id === columnId
+                    ? { ...column, tasks: column.tasks.filter((task) => task._id !== taskId) }
+                    : column
+                ),
+              }
+            : state.selectedBoard,
         loading: false,
       }));
     } catch (error) {

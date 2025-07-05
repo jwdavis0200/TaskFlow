@@ -122,4 +122,21 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Nested route for tasks within a specific project/board/column
+router.get("/:boardId/columns/:columnId/tasks", async (req, res) => {
+  try {
+    const { boardId, columnId } = req.params;
+    
+    // Find tasks that belong to the specific column
+    const tasks = await Task.find({
+      board: boardId,
+      column: columnId
+    });
+    
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

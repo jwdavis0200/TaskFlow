@@ -27,20 +27,65 @@ router.get("/:id", async (req, res) => {
 
 // CREATE one task
 router.post("/", async (req, res) => {
-  const task = new Task({
-    title: req.body.title,
-    description: req.body.description,
-    project: req.body.projectId, // Map projectId to project field
-    board: req.body.boardId, // Map boardId to board field
-    column: req.body.columnId, // Map columnId to column field
-    dueDate: req.body.dueDate,
-    priority: req.body.priority,
-  });
   try {
+    console.log("Backend POST /tasks - Request body:", req.body);
+    
+    // Validate required fields
+    if (!req.body.title) {
+      return res.status(400).json({ message: "Title is required" });
+    }
+    if (!req.body.projectId) {
+      return res.status(400).json({ message: "Project ID is required" });
+    }
+    if (!req.body.boardId) {
+      return res.status(400).json({ message: "Board ID is required" });
+    }
+    if (!req.body.columnId) {
+      return res.status(400).json({ message: "Column ID is required" });
+    }
+
+    // Convert frontend values to backend enum format
+    const statusMap = {
+      "To Do": "to-do",
+      "In Progress": "in-progress",
+      "Done": "done"
+    };
+    
+    const priorityMap = {
+      "Low": "low",
+      "Medium": "medium",
+      "High": "high"
+    };
+
+    const task = new Task({
+      title: req.body.title,
+      description: req.body.description,
+      project: req.body.projectId, // Map projectId to project field
+      board: req.body.boardId, // Map boardId to board field
+      column: req.body.columnId, // Map columnId to column field
+      dueDate: req.body.dueDate,
+      priority: priorityMap[req.body.priority] || req.body.priority?.toLowerCase() || "medium",
+      status: statusMap[req.body.status] || req.body.status?.toLowerCase().replace(" ", "-") || "to-do",
+      timeSpent: req.body.timeSpent || 0,
+      isRunning: req.body.isRunning || false,
+      isCompleted: req.body.isCompleted || false,
+    });
+
+    console.log("Backend POST /tasks - Creating task with data:", {
+      title: task.title,
+      project: task.project,
+      board: task.board,
+      column: task.column,
+      status: task.status,
+      priority: task.priority
+    });
+
     const newTask = await task.save();
+    console.log("Backend POST /tasks - Task created successfully:", newTask._id);
     res.status(201).json(newTask);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error("Backend POST /tasks - Error:", err);
+    res.status(400).json({ message: err.message, details: err.errors });
   }
 });
 

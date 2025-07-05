@@ -60,6 +60,27 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/tasks", taskRoutes);
 
+// Nested route for tasks within projects/boards/columns
+app.get("/api/projects/:projectId/boards/:boardId/columns/:columnId/tasks", async (req, res) => {
+  const { projectId, boardId, columnId } = req.params;
+  
+  try {
+    // Import Task model for this route
+    const Task = require("./models/Task");
+    
+    // Find tasks that belong to the specific project, board, and column
+    const tasks = await Task.find({
+      project: projectId,
+      board: boardId,
+      column: columnId
+    });
+    
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

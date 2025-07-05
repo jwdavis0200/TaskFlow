@@ -133,10 +133,8 @@ export const updateTask = async (
   return response.data;
 };
 
-export const deleteTask = async (projectId, boardId, columnId, taskId) => {
-  const response = await api.delete(
-    `/projects/${projectId}/boards/${boardId}/columns/${columnId}/tasks/${taskId}`
-  );
+export const deleteTask = async (taskId) => {
+  const response = await api.delete(`/tasks/${taskId}`);
   return response.data;
 };
 
