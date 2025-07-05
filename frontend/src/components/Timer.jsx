@@ -92,22 +92,23 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
     if (!taskId) return;
     
     timerRef.current = getTimer(taskId);
-    setTime(initialTime);
+    setTime(timerRef.current.getTimeSpent() || initialTime);
     setIsRunning(timerRef.current.isRunning());
 
-    // Cleanup on unmount
+    // Cleanup on unmount or taskId change only
     return () => {
       if (timerRef.current) {
         removeTimer(taskId);
       }
     };
-  }, [taskId, initialTime]);
+  }, [taskId]); // Only depend on taskId, not initialTime
 
-  // Update local state when initialTime changes
+  // Update timer state when initialTime changes (without recreating timer)
   useEffect(() => {
-    setTime(initialTime);
     if (timerRef.current && !timerRef.current.isRunning()) {
+      // Only update if timer is not running to avoid conflicts
       timerRef.current.timeSpent = initialTime;
+      setTime(initialTime);
     }
   }, [initialTime]);
 
@@ -146,8 +147,19 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
   const handleStop = () => {
     if (!timerRef.current) return;
     
+    const currentTime = timerRef.current.getTimeSpent();
     timerRef.current.stop();
     setIsRunning(false);
+    
+    // Update the database with the current time when stopping
+    if (onTimeUpdate) {
+      onTimeUpdate(taskId, currentTime);
+    }
+    
+    // Call completion callback to update task status
+    if (onTimerComplete) {
+      onTimerComplete(taskId);
+    }
   };
 
   const handleReset = () => {

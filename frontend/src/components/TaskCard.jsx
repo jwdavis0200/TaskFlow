@@ -143,6 +143,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   });
 
   const updateTask = useStore((state) => state.updateTask);
+  const deleteTask = useStore((state) => state.deleteTask);
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {
@@ -157,8 +158,21 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   const handleTimerComplete = (taskId) => {
     updateTask(projectId, boardId, columnId, taskId, {
       ...task,
-      isRunning: false
+      isRunning: false,
+      timeSpent: task.timeSpent // Ensure timeSpent is preserved when stopping
     });
+  };
+
+  // Handler for deleting the task
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await deleteTask(projectId, boardId, columnId, task._id);
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        alert('Failed to delete task. Please try again.');
+      }
+    }
   };
 
   const formatDueDate = (dateString) => {
@@ -180,18 +194,32 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
         }}
       >
         <TaskTitle>{task.title}</TaskTitle>
-        <button
-          onClick={() => onEdit({ ...task, columnId })}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "14px",
-            color: "#667eea",
-          }}
-        >
-          Edit
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() => onEdit({ ...task, columnId })}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px",
+              color: "#667eea",
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px",
+              color: "#dc3545",
+            }}
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       {task.description && (
