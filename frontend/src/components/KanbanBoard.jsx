@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import Column from "./Column";
 import TaskForm from "./TaskForm";
 import { useStore } from "../store";
@@ -156,6 +155,32 @@ const LoadingContainer = styled.div`
   font-weight: 500;
 `;
 
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  padding: 20px;
+`;
+
+const EmptyStateTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  opacity: 0.9;
+`;
+
+const EmptyStateMessage = styled.p`
+  font-size: 16px;
+  opacity: 0.7;
+  max-width: 400px;
+  line-height: 1.5;
+`;
+
 const KanbanBoard = () => {
   const {
     boards,
@@ -167,6 +192,12 @@ const KanbanBoard = () => {
     setSelectedBoard,
     updateTask,
   } = useStore();
+  
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null); // For editing existing tasks
+  const [isLoadingBoards, setIsLoadingBoards] = useState(false);
+  const [hasLoadedBoards, setHasLoadedBoards] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
       console.log("KanbanBoard: Starting to load data...");
@@ -183,24 +214,44 @@ const KanbanBoard = () => {
     console.log("KanbanBoard: Projects updated:", projects);
     if (projects.length > 0) {
       console.log("KanbanBoard: Loading boards for project:", projects[0]._id);
-      loadBoards(projects[0]._id);
+      setIsLoadingBoards(true);
+      setHasLoadedBoards(false);
+      loadBoards(projects[0]._id).finally(() => {
+        setIsLoadingBoards(false);
+        setHasLoadedBoards(true);
+      });
     } else {
       console.log("KanbanBoard: No projects found");
+      setHasLoadedBoards(true);
     }
   }, [projects, loadBoards]);
 
   useEffect(() => {
-    console.log("KanbanBoard: Boards updated:", boards);
-    console.log("KanbanBoard: Selected board:", selectedBoard);
-    // Auto-select first board if none selected
-    if (boards.length > 0 && !selectedBoard) {
-      console.log("KanbanBoard: Auto-selecting first board:", boards[0]);
-      setSelectedBoard(boards[0]);
+    console.log("KanbanBoard: Syncing selected board. Current boards count:", boards.length);
+
+    if (boards.length > 0) {
+      // Check if the currently selected board exists in the updated boards list
+      const currentBoardInList = selectedBoard ? boards.find(b => b._id === selectedBoard._id) : null;
+
+      if (currentBoardInList) {
+        // If the selected board is in the list, ensure we are using the most up-to-date object.
+        // This is crucial for when the board details (like columns) are fetched.
+        // A deep equality check avoids unnecessary re-renders.
+        if (JSON.stringify(currentBoardInList) !== JSON.stringify(selectedBoard)) {
+          console.log("KanbanBoard: Refreshing selected board data.");
+          setSelectedBoard(currentBoardInList);
+        }
+      } else {
+        // If there is no selected board, or the old one is gone, select the first board from the new list.
+        console.log("KanbanBoard: Auto-selecting first board from the list:", boards[0]);
+        setSelectedBoard(boards[0]);
+      }
+    } else {
+      // If there are no boards for this project, clear the selected board.
+      console.log("KanbanBoard: No boards available, clearing selection.");
+      setSelectedBoard(null);
     }
   }, [boards, selectedBoard, setSelectedBoard]);
-
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null); // For editing existing tasks
 
   const handleEditTask = (task) => {
     handleOpenTaskForm(task);
@@ -216,7 +267,25 @@ const KanbanBoard = () => {
     setSelectedTask(null);
   };
 
-  if (!selectedBoard || !selectedBoard.columns) {
+  // Show loading state while actually loading
+  if (isLoadingBoards || !hasLoadedBoards) {
+    return <LoadingContainer>Loading boards...</LoadingContainer>;
+  }
+
+  // Show empty state if no boards exist for the project
+  if (hasLoadedBoards && boards.length === 0) {
+    return (
+      <EmptyStateContainer>
+        <EmptyStateTitle>No Boards Found</EmptyStateTitle>
+        <EmptyStateMessage>
+          This project doesn't have any boards yet. Create a new board to get started with organizing your tasks.
+        </EmptyStateMessage>
+      </EmptyStateContainer>
+    );
+  }
+
+  // Show loading if boards exist but none selected yet or columns not loaded
+  if (!selectedBoard || !Array.isArray(selectedBoard.columns)) {
     return <LoadingContainer>Loading boards...</LoadingContainer>;
   }
 
