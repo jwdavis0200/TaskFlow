@@ -190,7 +190,7 @@ const KanbanBoard = () => {
     loadProjects,
     loadBoards,
     setSelectedBoard,
-    updateTask,
+    setSelectedProject,
   } = useStore();
   
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -214,6 +214,10 @@ const KanbanBoard = () => {
     console.log("KanbanBoard: Projects updated:", projects);
     if (projects.length > 0) {
       console.log("KanbanBoard: Loading boards for project:", projects[0]._id);
+      // Set the first project as selected if no project is currently selected
+      if (!selectedProject) {
+        setSelectedProject(projects[0]);
+      }
       setIsLoadingBoards(true);
       setHasLoadedBoards(false);
       loadBoards(projects[0]._id).finally(() => {
@@ -224,7 +228,7 @@ const KanbanBoard = () => {
       console.log("KanbanBoard: No projects found");
       setHasLoadedBoards(true);
     }
-  }, [projects, loadBoards]);
+  }, [projects, loadBoards, selectedProject, setSelectedProject]);
 
   useEffect(() => {
     console.log("KanbanBoard: Syncing selected board. Current boards count:", boards.length);
@@ -293,7 +297,7 @@ const KanbanBoard = () => {
     <DndProvider backend={HTML5Backend}>
       <BoardContainer>
         <Header>
-          <Title>TaskFlow Pro - {selectedBoard.name || "Kanban Board"}</Title>
+          <Title>{selectedProject?.name || "Project"} - {selectedBoard.name || "Kanban Board"}</Title>
           <AddTaskButton onClick={() => handleOpenTaskForm()}>
             + Add New Task
           </AddTaskButton>
