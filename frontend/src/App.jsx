@@ -1,6 +1,8 @@
 import React from "react";
 import { Global, css } from "@emotion/react";
+import styled from "@emotion/styled";
 import KanbanBoard from "./components/KanbanBoard";
+import Sidebar from "./components/Sidebar";
 
 const globalStyles = css`
   * {
@@ -34,11 +36,26 @@ const globalStyles = css`
   }
 `;
 
+const AppContainer = styled.div`
+  display: flex;
+  height: 100vh;
+`;
+
+const MainContent = styled.div`
+  flex: 1;
+  overflow: hidden;
+`;
+
 function App() {
   return (
     <>
       <Global styles={globalStyles} />
-      <KanbanBoard />
+      <AppContainer>
+        <Sidebar />
+        <MainContent>
+          <KanbanBoard />
+        </MainContent>
+      </AppContainer>
     </>
   );
 }

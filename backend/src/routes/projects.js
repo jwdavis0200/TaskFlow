@@ -1,12 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
+const Board = require("../models/Board");
 const Task = require("../models/Task");
 
-// GET all projects
+// GET all projects with populated boards
 router.get("/", async (req, res) => {
   try {
-    const projects = await Project.find();
+    const projects = await Project.find()
+      .populate({
+        path: 'boardsList',
+        select: 'name createdAt'
+      });
     res.json(projects);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -23,6 +28,33 @@ router.get("/:id", async (req, res) => {
     res.json(project);
   } catch (err) {
     return res.status(500).json({ message: err.message });
+  }
+});
+
+// GET boards for a specific project
+router.get("/:id/boards", async (req, res) => {
+  try {
+    const { id: projectId } = req.params;
+    
+    // Verify project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    // Fetch boards with populated columns and tasks
+    const boards = await Board.find({ project: projectId })
+      .populate({
+        path: 'columns',
+        populate: {
+          path: 'tasks',
+          model: 'Task'
+        }
+      });
+
+    res.json(boards);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -60,17 +92,72 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// DELETE one project
+// DELETE one project with proper cascade deletion
 router.delete("/:id", async (req, res) => {
+  const mongoose = require("mongoose");
+  const Column = require("../models/Column");
+  const session = await mongoose.startSession();
+  
   try {
-    const project = await Project.findById(req.params.id);
-    if (project == null) {
+    await session.startTransaction();
+    
+    const projectId = req.params.id;
+    console.log('Deleting project:', projectId);
+    
+    // Validate projectId
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
+
+    // Find the project first
+    const project = await Project.findById(projectId).session(session);
+    if (!project) {
+      await session.abortTransaction();
       return res.status(404).json({ message: "Cannot find project" });
     }
-    await project.remove();
-    res.json({ message: "Deleted Project" });
+
+    console.log('Project found:', project.name);
+
+    // Delete all tasks in this project
+    const tasksDeleted = await Task.deleteMany({ project: projectId }, { session });
+    console.log('Tasks deleted:', tasksDeleted.deletedCount);
+
+    // Delete all columns in this project's boards
+    const columnsDeleted = await Column.deleteMany({
+      board: { $in: project.boards }
+    }, { session });
+    console.log('Columns deleted:', columnsDeleted.deletedCount);
+
+    // Delete all boards in this project
+    const boardsDeleted = await Board.deleteMany({ project: projectId }, { session });
+    console.log('Boards deleted:', boardsDeleted.deletedCount);
+
+    // Delete the project itself
+    await Project.findByIdAndDelete(projectId, { session });
+    console.log('Project deleted successfully');
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: "Project deleted successfully",
+      details: {
+        tasksDeleted: tasksDeleted.deletedCount,
+        columnsDeleted: columnsDeleted.deletedCount,
+        boardsDeleted: boardsDeleted.deletedCount
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    await session.abortTransaction();
+    console.error('Error deleting project:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      details: err.name || 'Unknown error'
+    });
+  } finally {
+    await session.endSession();
   }
 });
 

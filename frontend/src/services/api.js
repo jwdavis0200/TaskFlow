@@ -30,6 +30,26 @@ export const fetchProjects = async () => {
   return response.data;
 };
 
+export const fetchProjectsWithBoards = async () => {
+  const response = await api.get("/projects");
+  const projects = response.data;
+  
+  // Fetch boards for each project
+  const projectsWithBoards = await Promise.all(
+    projects.map(async (project) => {
+      try {
+        const boards = await fetchBoards(project._id);
+        return { ...project, boards };
+      } catch (error) {
+        console.error(`Error fetching boards for project ${project._id}:`, error);
+        return { ...project, boards: [] };
+      }
+    })
+  );
+  
+  return projectsWithBoards;
+};
+
 export const createProject = async (projectData) => {
   const response = await api.post("/projects", projectData);
   return response.data;
@@ -41,8 +61,15 @@ export const updateProject = async (projectId, projectData) => {
 };
 
 export const deleteProject = async (projectId) => {
-  const response = await api.delete(`/projects/${projectId}`);
-  return response.data;
+  console.log('API: Deleting project:', projectId);
+  try {
+    const response = await api.delete(`/projects/${projectId}`);
+    console.log('API: Project deletion response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('API: Error deleting project:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to delete project');
+  }
 };
 
 // Boards API
@@ -58,8 +85,15 @@ export const fetchBoards = async (projectId) => {
 };
 
 export const createBoard = async (projectId, boardData) => {
-  const response = await api.post(`/boards`, { ...boardData, projectId });
-  return response.data;
+  console.log('API: Creating board with data:', { projectId, boardData });
+  try {
+    const response = await api.post(`/boards`, { ...boardData, projectId });
+    console.log('API: Board creation response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('API: Error creating board:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to create board');
+  }
 };
 
 export const updateBoard = async (projectId, boardId, boardData) => {
@@ -68,8 +102,15 @@ export const updateBoard = async (projectId, boardId, boardData) => {
 };
 
 export const deleteBoard = async (projectId, boardId) => {
-  const response = await api.delete(`/boards/${boardId}`);
-  return response.data;
+  console.log('API: Deleting board:', { projectId, boardId });
+  try {
+    const response = await api.delete(`/boards/${boardId}`);
+    console.log('API: Board deletion response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('API: Error deleting board:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to delete board');
+  }
 };
 
 // Columns API

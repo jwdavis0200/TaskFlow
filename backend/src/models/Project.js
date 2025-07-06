@@ -21,10 +21,24 @@ const ProjectSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  boards: [{
+    type: mongoose.Types.ObjectId,
+    ref: "Board",
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// Virtual populate for boards
+ProjectSchema.virtual('boardsList', {
+  ref: 'Board',
+  localField: '_id',
+  foreignField: 'project'
+});
+
+ProjectSchema.set('toJSON', { virtuals: true });
+ProjectSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model("Project", ProjectSchema);

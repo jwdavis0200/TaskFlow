@@ -46,7 +46,13 @@ export const useStore = create((set, get) => ({
       console.log("Store: Fetching projects from API...");
       const projects = await fetchProjects();
       console.log("Store: Projects fetched:", projects);
-      set({ projects, loading: false });
+      // Map boardsList virtual to boards for UI consistency
+      const projectsWithBoards = projects.map(project => ({
+        ...project,
+        boards: project.boardsList || []
+      }));
+      console.log("Store: Projects with boards mapped:", projectsWithBoards);
+      set({ projects: projectsWithBoards, loading: false });
     } catch (error) {
       console.error("Store: Error fetching projects:", error);
       set({ error, loading: false });
@@ -111,12 +117,20 @@ export const useStore = create((set, get) => ({
     }
   },
   addBoard: async (projectId, boardData) => {
+    const { loadProjects } = get();
     set({ loading: true, error: null });
     try {
       const newBoard = await createBoard(projectId, boardData);
-      set((state) => ({ boards: [...state.boards, newBoard], loading: false }));
+      console.log("Store: Board created successfully:", newBoard);
+      
+      // Reload all projects to get the updated boards data
+      await loadProjects();
+      
+      set({ loading: false });
     } catch (error) {
+      console.error("Store: Error creating board:", error);
       set({ error, loading: false });
+      throw error; // Re-throw to handle in component
     }
   },
   updateBoard: async (projectId, boardId, boardData) => {
@@ -143,6 +157,14 @@ export const useStore = create((set, get) => ({
       await deleteBoard(projectId, boardId);
       set((state) => ({
         boards: state.boards.filter((board) => board._id !== boardId),
+        projects: state.projects.map((project) =>
+          project._id === projectId
+            ? {
+                ...project,
+                boards: project.boards.filter((board) => board._id !== boardId),
+              }
+            : project
+        ),
         selectedBoard:
           state.selectedBoard?._id === boardId ? null : state.selectedBoard,
         loading: false,

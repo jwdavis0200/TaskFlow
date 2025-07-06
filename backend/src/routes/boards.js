@@ -1,7 +1,9 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Board = require("../models/Board");
 const Column = require("../models/Column");
+const Project = require("../models/Project");
 const Task = require("../models/Task");
 
 // GET all boards
@@ -59,14 +61,44 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// CREATE one board
+// Enhanced CREATE board with Project.boards array update
 router.post("/", async (req, res) => {
-  const board = new Board({
-    name: req.body.name,
-    project: req.body.projectId, // Map projectId to project field
-  });
+  const session = await mongoose.startSession();
+  
   try {
-    const newBoard = await board.save();
+    session.startTransaction();
+    
+    const { name, projectId } = req.body;
+    
+    console.log('Creating board with:', { name, projectId });
+    
+    if (!name || !projectId) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Name and projectId are required' });
+    }
+
+    // Validate projectId
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
+
+    // Check if project exists
+    const project = await Project.findById(projectId).session(session);
+    if (!project) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    console.log('Project found:', project.name);
+
+    const board = new Board({
+      name,
+      project: projectId, // Map projectId to project field
+    });
+
+    const newBoard = await board.save({ session });
+    console.log('Board saved:', newBoard._id);
 
     // Create default columns for the new board
     const defaultColumns = [
@@ -75,19 +107,34 @@ router.post("/", async (req, res) => {
       { name: "Done", board: newBoard._id },
     ];
 
-    const createdColumns = await Column.insertMany(defaultColumns);
-
-    // Update the board with the column references
+    const createdColumns = await Column.insertMany(defaultColumns, { session });
     newBoard.columns = createdColumns.map((col) => col._id);
-    await newBoard.save();
+    await newBoard.save({ session });
 
-    // Return the board with populated columns
-    const populatedBoard = await Board.findById(newBoard._id).populate(
-      "columns"
+    console.log('Default columns created:', createdColumns.length);
+
+    // Update Project.boards array
+    const updatedProject = await Project.findByIdAndUpdate(
+      projectId,
+      { $push: { boards: newBoard._id } },
+      { session, new: true }
     );
+
+    console.log('Project updated, boards count:', updatedProject.boards.length);
+
+    await session.commitTransaction();
+
+    const populatedBoard = await Board.findById(newBoard._id).populate("columns");
     res.status(201).json(populatedBoard);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    await session.abortTransaction();
+    console.error('Error creating board:', err);
+    res.status(400).json({
+      message: err.message,
+      details: err.name || 'Unknown error'
+    });
+  } finally {
+    session.endSession();
   }
 });
 
@@ -108,17 +155,74 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// DELETE one board
+// DELETE one board with proper cleanup
 router.delete("/:id", async (req, res) => {
+  const session = await mongoose.startSession();
+  
   try {
-    const board = await Board.findById(req.params.id);
-    if (board == null) {
+    await session.startTransaction();
+    
+    const boardId = req.params.id;
+    console.log('Deleting board:', boardId);
+    
+    // Validate boardId
+    if (!mongoose.Types.ObjectId.isValid(boardId)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid board ID' });
+    }
+
+    // Find the board first
+    const board = await Board.findById(boardId).session(session);
+    if (!board) {
+      await session.abortTransaction();
       return res.status(404).json({ message: "Cannot find board" });
     }
-    await board.remove();
-    res.json({ message: "Deleted Board" });
+
+    console.log('Board found:', board.name, 'Project:', board.project);
+
+    // Delete all tasks in this board's columns
+    const tasksDeleted = await Task.deleteMany({ board: boardId }, { session });
+    console.log('Tasks deleted:', tasksDeleted.deletedCount);
+
+    // Delete all columns in this board
+    const columnsDeleted = await Column.deleteMany({ board: boardId }, { session });
+    console.log('Columns deleted:', columnsDeleted.deletedCount);
+
+    // Remove board from project's boards array
+    const updatedProject = await Project.findByIdAndUpdate(
+      board.project,
+      { $pull: { boards: boardId } },
+      { session, new: true }
+    );
+
+    if (updatedProject) {
+      console.log('Project updated, remaining boards:', updatedProject.boards.length);
+    }
+
+    // Delete the board itself
+    await Board.findByIdAndDelete(boardId, { session });
+    console.log('Board deleted successfully');
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: "Board deleted successfully",
+      details: {
+        tasksDeleted: tasksDeleted.deletedCount,
+        columnsDeleted: columnsDeleted.deletedCount
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    await session.abortTransaction();
+    console.error('Error deleting board:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      details: err.name || 'Unknown error'
+    });
+  } finally {
+    await session.endSession();
   }
 });
 
