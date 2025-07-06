@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
+import { HiMenuAlt2 } from 'react-icons/hi';
 
 const SidebarContainer = styled.div`
-  width: 280px;
+  position: relative;
+  top: 0;
+  left: 0;
+  width: ${props => props.isOpen ? '320px' : '0'};
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-right: 1px solid #e2e8f0;
-  padding: 20px;
+  border-right: ${props => props.isOpen ? '1px solid #e2e8f0' : 'none'};
+  padding: ${props => props.isOpen ? '20px' : '0'};
   height: 100vh;
-  overflow-y: auto;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  box-shadow: ${props => props.isOpen ? '2px 0 10px rgba(0, 0, 0, 0.05)' : 'none'};
+  z-index: 999;
+  transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    position: fixed;
+    width: 320px;
+    transform: translateX(${props => props.isOpen ? '0' : '-100%'});
+    padding: 20px;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  }
   
   /* Scrollbar styling */
   &::-webkit-scrollbar {
@@ -32,20 +47,96 @@ const SidebarContainer = styled.div`
   }
 `;
 
+const ToggleButton = styled.button`
+  position: fixed;
+  top: 20px;
+  left: ${props => props.isOpen ? '272px' : '20px'};
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 2px 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1001;
+  
+  &:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 12px rgba(59, 130, 246, 0.4);
+  }
+  
+  &:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (min-width: 769px) {
+    left: ${props => props.isOpen ? '272px' : '20px'};
+  }
+`;
+
 const SidebarHeader = styled.div`
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid #e2e8f0;
+  position: relative;
+`;
+
+const SidebarHeaderTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 `;
 
 const SidebarTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 16px 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+`;
+
+const CloseButton = styled.button`
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: #64748b;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f1f5f9;
+    color: #334155;
+  }
+  
+  &:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  @media (min-width: 769px) {
+    display: none;
+  }
 `;
 
 const TitleIcon = styled.span`
@@ -81,7 +172,7 @@ const AddButton = styled.button`
 `;
 
 const Sidebar = () => {
-  const { projects, addProject } = useStore();
+  const { projects, addProject, isSidebarOpen, toggleSidebar } = useStore();
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   
   const handleCreateProject = async () => {
@@ -97,21 +188,62 @@ const Sidebar = () => {
       }
     }
   };
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && isSidebarOpen) {
+        toggleSidebar();
+      }
+      // Toggle sidebar with Ctrl/Cmd + B
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSidebarOpen, toggleSidebar]);
   
   return (
-    <SidebarContainer>
-      <SidebarHeader>
-        <SidebarTitle>
-          <TitleIcon>📋</TitleIcon>
-          Projects
-        </SidebarTitle>
-        <AddButton onClick={handleCreateProject}>
-          <span>+</span>
-          New Project
-        </AddButton>
-      </SidebarHeader>
-      <ProjectsList projects={projects} />
-    </SidebarContainer>
+    <>
+      <ToggleButton
+        isOpen={isSidebarOpen}
+        onClick={toggleSidebar}
+        aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        aria-expanded={isSidebarOpen}
+      >
+        <HiMenuAlt2 size={20} />
+      </ToggleButton>
+      
+      <SidebarContainer
+        isOpen={isSidebarOpen}
+        role="navigation"
+        aria-label="Project navigation sidebar"
+        aria-hidden={!isSidebarOpen}
+      >
+        <SidebarHeader>
+          <SidebarHeaderTop>
+            <SidebarTitle>
+              <TitleIcon>📋</TitleIcon>
+              Projects
+            </SidebarTitle>
+            <CloseButton
+              onClick={toggleSidebar}
+              aria-label="Close sidebar"
+            >
+              ✕
+            </CloseButton>
+          </SidebarHeaderTop>
+          <AddButton onClick={handleCreateProject}>
+            <span>+</span>
+            New Project
+          </AddButton>
+        </SidebarHeader>
+        <ProjectsList projects={projects} />
+      </SidebarContainer>
+    </>
   );
 };
 

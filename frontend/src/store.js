@@ -32,7 +32,7 @@ export const useStore = create((set, get) => ({
   tasks: [],
 
   // UI State
-  isSidebarOpen: true,
+  isSidebarOpen: JSON.parse(localStorage.getItem('taskflow-sidebar-open') ?? 'true'),
   isModalOpen: false,
   modalContent: null, // e.g., 'addProject', 'addTask', 'editBoard'
 
@@ -514,7 +514,11 @@ export const useStore = create((set, get) => ({
 
   // UI Actions
   toggleSidebar: () =>
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+    set((state) => {
+      const newSidebarState = !state.isSidebarOpen;
+      localStorage.setItem('taskflow-sidebar-open', JSON.stringify(newSidebarState));
+      return { isSidebarOpen: newSidebarState };
+    }),
   openModal: (content = null) =>
     set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
