@@ -117,13 +117,16 @@ export const useStore = create((set, get) => ({
     }
   },
   addBoard: async (projectId, boardData) => {
-    const { loadProjects } = get();
+    const { loadProjects, loadBoards } = get();
     set({ loading: true, error: null });
     try {
       const newBoard = await createBoard(projectId, boardData);
       console.log("Store: Board created successfully:", newBoard);
       
-      // Reload all projects to get the updated boards data
+      // Reload boards for the current project to get the updated data with columns
+      await loadBoards(projectId);
+      
+      // Also reload projects to update the project-level board list
       await loadProjects();
       
       set({ loading: false });

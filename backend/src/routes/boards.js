@@ -9,8 +9,13 @@ const Task = require("../models/Task");
 // GET all boards
 router.get("/", async (req, res) => {
   try {
-    console.log("Fetching boards with manual column population...");
-    const boards = await Board.find();
+    const { projectId } = req.query;
+    if (!projectId) {
+      // If no projectId is provided, it's a bad request.
+      return res.status(400).json({ message: "A projectId is required to fetch boards." });
+    }
+    console.log(`Fetching boards for project ${projectId} with manual column population...`);
+    const boards = await Board.find({ project: projectId });
     console.log("Boards found:", boards.length);
 
     // Manually populate columns and tasks for each board

@@ -75,19 +75,23 @@ export const deleteProject = async (projectId) => {
 // Boards API
 export const fetchBoards = async (projectId) => {
   console.log("API: Fetching boards for projectId:", projectId);
-  const response = await api.get(`/boards`);
-  console.log("API: All boards from server:", response.data);
-  const filteredBoards = response.data.filter(
-    (board) => board.project === projectId
-  );
-  console.log("API: Filtered boards:", filteredBoards);
-  return filteredBoards;
+  // Pass projectId as a query parameter for server-side filtering
+  const response = await api.get(`/boards`, { params: { projectId } });
+  console.log("API: Boards received from server:", response.data);
+  // The backend now returns only the relevant boards, so no client-side filtering is needed.
+  return response.data;
 };
 
 export const createBoard = async (projectId, boardData) => {
   console.log('API: Creating board with data:', { projectId, boardData });
   try {
-    const response = await api.post(`/boards`, { ...boardData, projectId });
+    // Ensure the payload matches what the backend expects: { name, projectId }
+    const payload = {
+      name: boardData.name,
+      projectId: projectId
+    };
+    console.log('API: Sending payload:', payload);
+    const response = await api.post(`/boards`, payload);
     console.log('API: Board creation response:', response.data);
     return response.data;
   } catch (error) {
