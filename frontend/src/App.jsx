@@ -46,6 +46,7 @@ const MainContent = styled.div`
   flex: 1;
   overflow: hidden;
   transition: margin-left 0.3s ease;
+  margin-left: 60px;
   @media (max-width: 768px) {
     margin-left: 0;
   }

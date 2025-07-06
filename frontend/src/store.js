@@ -104,14 +104,24 @@ export const useStore = create((set, get) => ({
       set({ error, loading: false });
     }
   },
-  setSelectedProject: (project) => set({ selectedProject: project }),
+  setSelectedProject: (project) => {
+    // Validate project has required properties
+    if (project && (!project._id || !project.name)) {
+      console.error("Store: Invalid project data provided:", project);
+      return;
+    }
+    
+    console.log("Store: Setting selected project:", project?.name);
+    set({ selectedProject: project });
+  },
 
   // Board Actions
   loadBoards: async (projectId) => {
     set({ loading: true, error: null });
     try {
       const boards = await fetchBoards(projectId);
-      set({ boards, loading: false });
+      // Clear tasks when loading boards for a different project
+      set({ boards, tasks: [], loading: false });
     } catch (error) {
       set({ error, loading: false });
     }
@@ -176,7 +186,18 @@ export const useStore = create((set, get) => ({
       set({ error, loading: false });
     }
   },
-  setSelectedBoard: (board) => set({ selectedBoard: board }),
+  setSelectedBoard: (board) => {
+    console.log("Store: Setting selected board and clearing tasks:", board?.name);
+    
+    // Validate board has required properties
+    if (board && (!board._id || !board.name)) {
+      console.error("Store: Invalid board data provided:", board);
+      return;
+    }
+    
+    set({ selectedBoard: board, tasks: [] });
+  },
+  clearTasks: () => set({ tasks: [] }),
 
   // Column Actions
   addColumn: async (projectId, boardId, columnData) => {

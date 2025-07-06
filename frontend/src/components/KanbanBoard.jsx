@@ -213,22 +213,43 @@ const KanbanBoard = () => {
   useEffect(() => {
     console.log("KanbanBoard: Projects updated:", projects);
     if (projects.length > 0) {
-      console.log("KanbanBoard: Loading boards for project:", projects[0]._id);
       // Set the first project as selected if no project is currently selected
       if (!selectedProject) {
+        console.log("KanbanBoard: Setting first project as selected:", projects[0]._id);
         setSelectedProject(projects[0]);
       }
-      setIsLoadingBoards(true);
-      setHasLoadedBoards(false);
-      loadBoards(projects[0]._id).finally(() => {
-        setIsLoadingBoards(false);
-        setHasLoadedBoards(true);
-      });
     } else {
       console.log("KanbanBoard: No projects found");
       setHasLoadedBoards(true);
     }
-  }, [projects, loadBoards, selectedProject, setSelectedProject]);
+  }, [projects, selectedProject, setSelectedProject]);
+
+  // Separate useEffect for loading boards when selectedProject changes
+  useEffect(() => {
+    if (selectedProject) {
+      // Validate project has required properties
+      if (!selectedProject._id || !selectedProject.name) {
+        console.error("KanbanBoard: Invalid selectedProject:", selectedProject);
+        setHasLoadedBoards(true);
+        return;
+      }
+      
+      console.log("KanbanBoard: Loading boards for selected project:", selectedProject._id);
+      setIsLoadingBoards(true);
+      setHasLoadedBoards(false);
+      loadBoards(selectedProject._id)
+        .catch((error) => {
+          console.error("KanbanBoard: Failed to load boards:", error);
+        })
+        .finally(() => {
+          setIsLoadingBoards(false);
+          setHasLoadedBoards(true);
+        });
+    } else {
+      console.log("KanbanBoard: No selected project, clearing boards");
+      setHasLoadedBoards(true);
+    }
+  }, [selectedProject, loadBoards]);
 
   useEffect(() => {
     console.log("KanbanBoard: Syncing selected board. Current boards count:", boards.length);
@@ -240,8 +261,13 @@ const KanbanBoard = () => {
       if (currentBoardInList) {
         // If the selected board is in the list, ensure we are using the most up-to-date object.
         // This is crucial for when the board details (like columns) are fetched.
-        // A deep equality check avoids unnecessary re-renders.
-        if (JSON.stringify(currentBoardInList) !== JSON.stringify(selectedBoard)) {
+        // Efficient comparison of key properties instead of deep JSON comparison.
+        const needsUpdate = 
+          currentBoardInList.name !== selectedBoard.name ||
+          currentBoardInList.columns?.length !== selectedBoard.columns?.length ||
+          currentBoardInList.updatedAt !== selectedBoard.updatedAt;
+        
+        if (needsUpdate) {
           console.log("KanbanBoard: Refreshing selected board data.");
           setSelectedBoard(currentBoardInList);
         }

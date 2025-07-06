@@ -94,11 +94,22 @@ const BoardItemComponent = ({ board, projectId }) => {
     setSelectedBoard,
     updateBoard,
     deleteBoard,
-    loadBoards
+    loadBoards,
+    projects,
+    setSelectedProject
   } = useStore();
   
   const handleBoardSelect = () => {
-    setSelectedBoard(board);
+    // Find and set the correct project for this board
+    const project = projects.find(p => p._id === projectId);
+    if (project) {
+      console.log("BoardsList: Setting project and board:", project.name, board.name);
+      setSelectedProject(project);
+      setSelectedBoard(board);
+    } else {
+      console.warn("BoardsList: Project not found for board:", projectId);
+      setSelectedBoard(board);
+    }
   };
 
   const handleEditBoard = async (e) => {
