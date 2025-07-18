@@ -13,7 +13,7 @@ import {
   updateTask as updateTaskAPI,
   deleteTask,
 } from "./services/api.js";
-import { signInAnonymously, onAuthStateChange } from "./firebase/auth";
+import { signIn, signUp, signInAnonymously, onAuthStateChange, logout } from "./firebase/auth";
 
 export const useStore = create((set, get) => ({
   // Auth State
@@ -44,6 +44,47 @@ export const useStore = create((set, get) => ({
 
   // Auth Actions
   setUser: (user) => set({ user, isAuthenticated: !!user, authLoading: false }),
+  signInUser: async (email, password) => {
+    try {
+      set({ authLoading: true });
+      const user = await signIn(email, password);
+      set({ user, isAuthenticated: true, authLoading: false });
+      return user;
+    } catch (error) {
+      console.error('Error signing in:', error);
+      set({ authLoading: false });
+      throw error;
+    }
+  },
+  signUpUser: async (email, password) => {
+    try {
+      set({ authLoading: true });
+      const user = await signUp(email, password);
+      set({ user, isAuthenticated: true, authLoading: false });
+      return user;
+    } catch (error) {
+      console.error('Error signing up:', error);
+      set({ authLoading: false });
+      throw error;
+    }
+  },
+  signOut: async () => {
+    try {
+      await logout();
+      set({ 
+        user: null, 
+        isAuthenticated: false,
+        projects: [],
+        selectedProject: null,
+        boards: [],
+        selectedBoard: null,
+        tasks: []
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  },
   signInAnonymous: async () => {
     try {
       set({ authLoading: true });

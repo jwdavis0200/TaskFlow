@@ -20,8 +20,8 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 
-// Connect to emulators in development
-if (import.meta.env.DEV || import.meta.env.VITE_USE_FIREBASE_EMULATOR) {
+// Connect to emulators only when explicitly enabled
+if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
   // Wait for DOM to be ready before connecting to emulators
   if (typeof window !== 'undefined') {
     try {

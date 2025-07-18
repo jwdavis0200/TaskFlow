@@ -17,6 +17,8 @@ const SidebarContainer = styled.div`
   box-shadow: ${props => props.isOpen ? '2px 0 10px rgba(0, 0, 0, 0.05)' : 'none'};
   z-index: 999;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
   
   @media (max-width: 768px) {
     position: fixed;
@@ -110,6 +112,43 @@ const SidebarTitle = styled.h2`
   gap: 8px;
 `;
 
+const SidebarContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+`;
+
+const SidebarFooter = styled.div`
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: auto;
+`;
+
+const LogoutButton = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
 const CloseButton = styled.button`
   width: 32px;
   height: 32px;
@@ -172,9 +211,17 @@ const AddButton = styled.button`
 `;
 
 const Sidebar = () => {
-  const { projects, addProject, isSidebarOpen, toggleSidebar } = useStore();
+  const { projects, addProject, isSidebarOpen, toggleSidebar, user, signOut } = useStore();
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   const handleCreateProject = async () => {
     const projectName = prompt('Enter project name:');
     if (projectName && projectName.trim()) {
@@ -241,7 +288,14 @@ const Sidebar = () => {
             New Project
           </AddButton>
         </SidebarHeader>
-        <ProjectsList projects={projects} />
+        <SidebarContent>
+          <ProjectsList projects={projects} />
+        </SidebarContent>
+        <SidebarFooter>
+          <LogoutButton onClick={handleLogout}>
+            🚪 Sign Out
+          </LogoutButton>
+        </SidebarFooter>
       </SidebarContainer>
     </>
   );

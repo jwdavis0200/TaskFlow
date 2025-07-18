@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { useStore } from "../store";
 
@@ -121,26 +121,108 @@ const LoadingText = styled.p`
   margin: 16px 0 0 0;
 `;
 
+const AuthInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  transition: border-color 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+`;
+
+const AuthForm = styled.form`
+  width: 100%;
+`;
+
+const AuthLink = styled.button`
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+  margin-top: 16px;
+
+  &:hover {
+    color: #764ba2;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #e74c3c;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+`;
+
 const AuthGuard = ({ children }) => {
   const { 
     user, 
     isAuthenticated, 
     authLoading, 
-    signInAnonymous, 
+    signInUser,
+    signUpUser,
     initAuth 
   } = useStore();
+
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const unsubscribe = initAuth();
     return unsubscribe;
   }, [initAuth]);
 
-  const handleSignIn = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
-      await signInAnonymous();
+      if (!isLogin) {
+        // Registration
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters');
+          setLoading(false);
+          return;
+        }
+        await signUpUser(email, password);
+      } else {
+        // Login
+        await signInUser(email, password);
+      }
     } catch (error) {
       console.error('Authentication failed:', error);
+      setError(error.message || 'Authentication failed');
     }
+    setLoading(false);
+  };
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
   };
 
   if (authLoading) {
@@ -164,12 +246,53 @@ const AuthGuard = ({ children }) => {
           </AuthHeader>
           <AuthBody>
             <AuthDescription>
-              Welcome to TaskFlow Pro! Get started by signing in to access your projects, 
-              boards, and tasks. We'll create a temporary account for you to explore all features.
+              {isLogin 
+                ? "Welcome back! Sign in to access your projects and tasks."
+                : "Create your account to start managing your projects efficiently."
+              }
             </AuthDescription>
-            <AuthButton onClick={handleSignIn}>
-              Get Started
-            </AuthButton>
+            
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            
+            <AuthForm onSubmit={handleSubmit}>
+              <AuthInput
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <AuthInput
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {!isLogin && (
+                <AuthInput
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              )}
+              <AuthButton type="submit" disabled={loading}>
+                {loading && <LoadingSpinner />}
+                {loading 
+                  ? (isLogin ? 'Signing In...' : 'Creating Account...') 
+                  : (isLogin ? 'Sign In' : 'Create Account')
+                }
+              </AuthButton>
+            </AuthForm>
+            
+            <AuthLink onClick={toggleMode}>
+              {isLogin 
+                ? "Don't have an account? Create one" 
+                : "Already have an account? Sign in"
+              }
+            </AuthLink>
           </AuthBody>
         </AuthCard>
       </AuthContainer>
