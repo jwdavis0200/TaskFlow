@@ -138,41 +138,138 @@ const AuthButton = styled.button`
 
 const LoadingSpinner = styled.div`
   display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
   border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
-  margin-right: 8px;
+  border-top-color: #3b82f6;
+  border-right-color: #1d4ed8;
+  animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
 
   @keyframes spin {
-    to {
+    0% {
+      transform: rotate(0deg);
+      filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
+    }
+    50% {
+      filter: drop-shadow(0 6px 12px rgba(29, 78, 216, 0.4));
+    }
+    100% {
       transform: rotate(360deg);
+      filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
     }
   }
 `;
 
 const LoadingContainer = styled.div`
   min-height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
 `;
 
 const LoadingCard = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 48px 40px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    0 12px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  position: relative;
+  z-index: 10;
+  max-width: 400px;
+  width: 100%;
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform: translateY(20px);
+  opacity: 0;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgba(59, 130, 246, 0.05) 0%, 
+      rgba(29, 78, 216, 0.02) 100%);
+    border-radius: 24px;
+    pointer-events: none;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 36px 24px;
+    margin: 0 16px;
+    border-radius: 20px;
+  }
 `;
 
 const LoadingText = styled.p`
-  color: #666;
-  font-size: 16px;
-  margin: 16px 0 0 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+  
+  &::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  
+  @keyframes dots {
+    0%, 20% {
+      content: '';
+    }
+    40% {
+      content: '.';
+    }
+    60% {
+      content: '..';
+    }
+    80%, 100% {
+      content: '...';
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const AuthInput = styled.input`
