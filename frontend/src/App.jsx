@@ -12,18 +12,27 @@ const globalStyles = css`
     box-sizing: border-box;
   }
 
-  body {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
       "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-      "Helvetica Neue", sans-serif;
+      "Helvetica Neue", sans-serif !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    display: block !important;
+    place-items: initial !important;
   }
 
   #root {
     min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   button {

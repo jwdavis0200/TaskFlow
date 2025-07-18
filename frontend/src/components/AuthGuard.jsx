@@ -4,11 +4,22 @@ import { useStore } from "../store";
 
 const AuthContainer = styled.div`
   min-height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  padding: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+  
+  @media (max-width: 480px) {
+    padding: 8px;
+    align-items: flex-start;
+    padding-top: 10px;
+  }
 `;
 
 const AuthCard = styled.div`
@@ -17,7 +28,22 @@ const AuthCard = styled.div`
   overflow: hidden;
   width: 100%;
   max-width: 400px;
+  max-height: 90vh;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
+  box-sizing: border-box;
+  
+  @media (max-width: 480px) {
+    max-width: calc(100vw - 32px);
+    border-radius: 12px;
+    max-height: 95vh;
+    margin: 0 16px;
+  }
+  
+  @media (max-height: 600px) {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
 `;
 
 const AuthHeader = styled.div`
@@ -41,15 +67,32 @@ const AuthSubtitle = styled.p`
 `;
 
 const AuthBody = styled.div`
-  padding: 32px 24px;
+  padding: 24px 20px 32px 20px;
   text-align: center;
+  
+  @media (max-width: 480px) {
+    padding: 20px 16px 24px 16px;
+  }
+  
+  @media (max-height: 600px) {
+    padding: 16px 20px 20px 20px;
+  }
 `;
 
 const AuthDescription = styled.p`
   color: #666;
   font-size: 16px;
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 480px) {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  @media (max-height: 600px) {
+    margin-bottom: 12px;
+  }
 `;
 
 const AuthButton = styled.button`
@@ -59,26 +102,37 @@ const AuthButton = styled.button`
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-sizing: border-box;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3), 0 0 0 3px rgba(102, 126, 234, 0.2);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  @media (max-width: 480px) {
+    padding: 14px 20px;
+    font-size: 16px;
   }
 `;
 
@@ -123,25 +177,41 @@ const LoadingText = styled.p`
 
 const AuthInput = styled.input`
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e1e5e9;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 16px;
+  font-family: inherit;
   margin-bottom: 16px;
-  transition: border-color 0.3s ease;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #333;
 
   &:focus {
     outline: none;
     border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  &:hover {
+    border-color: #d1d5db;
   }
 
   &::placeholder {
-    color: #999;
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px 14px;
   }
 `;
 
 const AuthForm = styled.form`
   width: 100%;
+  box-sizing: border-box;
 `;
 
 const AuthLink = styled.button`
@@ -165,6 +235,75 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
+const ValidationIndicator = styled.div`
+  font-size: 12px;
+  margin-top: -12px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  
+  &.valid {
+    color: #27ae60;
+  }
+  
+  &.invalid {
+    color: #e74c3c;
+  }
+  
+  &.neutral {
+    color: #666;
+  }
+`;
+
+const ValidationIcon = styled.span`
+  font-size: 10px;
+  font-weight: bold;
+`;
+
+const PasswordRequirements = styled.div`
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-left: 3px solid #667eea;
+  box-sizing: border-box;
+  
+  @media (max-width: 480px) {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+`;
+
+const RequirementItem = styled.div`
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &.met {
+    color: #27ae60;
+  }
+  
+  &.unmet {
+    color: #e74c3c;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 11px;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+`;
+
 const AuthGuard = ({ children }) => {
   const { 
     user, 
@@ -181,11 +320,51 @@ const AuthGuard = ({ children }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Password validation states
+  const [passwordValidation, setPasswordValidation] = useState({
+    hasMinLength: false,
+    hasSpecialChar: false,
+    passwordsMatch: true
+  });
 
   useEffect(() => {
     const unsubscribe = initAuth();
     return unsubscribe;
   }, [initAuth]);
+
+  // Validate password requirements
+  const validatePassword = (pwd, confirmPwd = confirmPassword) => {
+    const hasMinLength = pwd.length >= 6;
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+    const passwordsMatch = pwd === confirmPwd;
+    
+    setPasswordValidation({
+      hasMinLength,
+      hasSpecialChar,
+      passwordsMatch
+    });
+    
+    return { hasMinLength, hasSpecialChar, passwordsMatch };
+  };
+
+  // Handle password input change
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (!isLogin) {
+      validatePassword(newPassword);
+    }
+  };
+
+  // Handle confirm password input change
+  const handleConfirmPasswordChange = (e) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    if (!isLogin) {
+      validatePassword(password, newConfirmPassword);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -194,17 +373,25 @@ const AuthGuard = ({ children }) => {
 
     try {
       if (!isLogin) {
-        // Registration
-        if (password !== confirmPassword) {
+        // Registration - validate with enhanced requirements
+        const validation = validatePassword(password, confirmPassword);
+        
+        if (!validation.passwordsMatch) {
           setError('Passwords do not match');
           setLoading(false);
           return;
         }
-        if (password.length < 6) {
+        if (!validation.hasMinLength) {
           setError('Password must be at least 6 characters');
           setLoading(false);
           return;
         }
+        if (!validation.hasSpecialChar) {
+          setError('Password must contain at least one special character');
+          setLoading(false);
+          return;
+        }
+        
         await signUpUser(email, password);
       } else {
         // Login
@@ -223,6 +410,11 @@ const AuthGuard = ({ children }) => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setPasswordValidation({
+      hasMinLength: false,
+      hasSpecialChar: false,
+      passwordsMatch: true
+    });
   };
 
   if (authLoading) {
@@ -266,17 +458,37 @@ const AuthGuard = ({ children }) => {
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
                 required
               />
+              {!isLogin && password && (
+                <PasswordRequirements>
+                  <RequirementItem className={passwordValidation.hasMinLength ? 'met' : 'unmet'}>
+                    <ValidationIcon>{passwordValidation.hasMinLength ? '✓' : '✗'}</ValidationIcon>
+                    At least 6 characters
+                  </RequirementItem>
+                  <RequirementItem className={passwordValidation.hasSpecialChar ? 'met' : 'unmet'}>
+                    <ValidationIcon>{passwordValidation.hasSpecialChar ? '✓' : '✗'}</ValidationIcon>
+                    Contains special character (!@#$%^&*(),.?":{}|&lt;&gt;)
+                  </RequirementItem>
+                </PasswordRequirements>
+              )}
               {!isLogin && (
-                <AuthInput
-                  type="password"
-                  placeholder="Confirm password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                <>
+                  <AuthInput
+                    type="password"
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                    required
+                  />
+                  {confirmPassword && (
+                    <ValidationIndicator className={passwordValidation.passwordsMatch ? 'valid' : 'invalid'}>
+                      <ValidationIcon>{passwordValidation.passwordsMatch ? '✓' : '✗'}</ValidationIcon>
+                      {passwordValidation.passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
+                    </ValidationIndicator>
+                  )}
+                </>
               )}
               <AuthButton type="submit" disabled={loading}>
                 {loading && <LoadingSpinner />}
