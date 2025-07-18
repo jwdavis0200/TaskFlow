@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { useStore } from "../store";
+import { formatDateForInput, createDateFromInput } from "../utils/dateUtils";
 
 const FormContainer = styled.div`
   background: white;
@@ -166,7 +167,7 @@ const TaskForm = ({ task, onClose }) => {
     if (task) {
       setTitle(task.title || "");
       setDescription(task.description || "");
-      setDueDate(task.dueDate || "");
+      setDueDate(formatDateForInput(task.dueDate));
       setStatus(task.status || "To Do");
       setPriority(task.priority || "Medium");
       setColumnId(task.columnId || "");
@@ -204,7 +205,7 @@ const TaskForm = ({ task, onClose }) => {
       const taskData = {
         title: title.trim(),
         description: description.trim(),
-        dueDate: dueDate || null,
+        dueDate: createDateFromInput(dueDate),
         status,
         priority,
         timeSpent: task ? task.timeSpent : 0,

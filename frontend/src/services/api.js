@@ -1,170 +1,103 @@
-import axios from "axios";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Add a request interceptor to include the token if available
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token"); // Assuming token is stored in localStorage
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase/config';
 
 // Projects API
 export const fetchProjects = async () => {
-  const response = await api.get("/projects");
-  return response.data;
+  const getProjects = httpsCallable(functions, 'getProjects');
+  const result = await getProjects();
+  return result.data;
 };
 
 export const fetchProjectsWithBoards = async () => {
-  const response = await api.get("/projects");
-  const projects = response.data;
-  
-  // Fetch boards for each project
-  const projectsWithBoards = await Promise.all(
-    projects.map(async (project) => {
-      try {
-        const boards = await fetchBoards(project._id);
-        return { ...project, boards };
-      } catch (error) {
-        console.error(`Error fetching boards for project ${project._id}:`, error);
-        return { ...project, boards: [] };
-      }
-    })
-  );
-  
-  return projectsWithBoards;
+  // Firebase functions already return projects with boards populated
+  return await fetchProjects();
 };
 
 export const createProject = async (projectData) => {
-  const response = await api.post("/projects", projectData);
-  return response.data;
+  const createProject = httpsCallable(functions, 'createProject');
+  const result = await createProject(projectData);
+  return result.data;
 };
 
 export const updateProject = async (projectId, projectData) => {
-  const response = await api.put(`/projects/${projectId}`, projectData);
-  return response.data;
+  const updateProject = httpsCallable(functions, 'updateProject');
+  const result = await updateProject({ projectId, updates: projectData });
+  return result.data;
 };
 
 export const deleteProject = async (projectId) => {
   console.log('API: Deleting project:', projectId);
   try {
-    const response = await api.delete(`/projects/${projectId}`);
-    console.log('API: Project deletion response:', response.data);
-    return response.data;
+    const deleteProject = httpsCallable(functions, 'deleteProject');
+    const result = await deleteProject({ projectId });
+    console.log('API: Project deletion response:', result.data);
+    return result.data;
   } catch (error) {
-    console.error('API: Error deleting project:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to delete project');
+    console.error('API: Error deleting project:', error.message);
+    throw new Error(error.message || 'Failed to delete project');
   }
 };
 
 // Boards API
 export const fetchBoards = async (projectId) => {
   console.log("API: Fetching boards for projectId:", projectId);
-  // Pass projectId as a query parameter for server-side filtering
-  const response = await api.get(`/boards`, { params: { projectId } });
-  console.log("API: Boards received from server:", response.data);
-  // The backend now returns only the relevant boards, so no client-side filtering is needed.
-  return response.data;
+  const getBoards = httpsCallable(functions, 'getBoards');
+  const result = await getBoards({ projectId });
+  console.log("API: Boards received from server:", result.data);
+  return result.data;
 };
 
 export const createBoard = async (projectId, boardData) => {
   console.log('API: Creating board with data:', { projectId, boardData });
   try {
-    // Ensure the payload matches what the backend expects: { name, projectId }
-    const payload = {
-      name: boardData.name,
-      projectId: projectId
-    };
-    console.log('API: Sending payload:', payload);
-    const response = await api.post(`/boards`, payload);
-    console.log('API: Board creation response:', response.data);
-    return response.data;
+    const createBoard = httpsCallable(functions, 'createBoard');
+    const result = await createBoard({ projectId, name: boardData.name });
+    console.log('API: Board creation response:', result.data);
+    return result.data;
   } catch (error) {
-    console.error('API: Error creating board:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to create board');
+    console.error('API: Error creating board:', error.message);
+    throw new Error(error.message || 'Failed to create board');
   }
 };
 
 export const updateBoard = async (projectId, boardId, boardData) => {
-  const response = await api.patch(`/boards/${boardId}`, boardData);
-  return response.data;
+  const updateBoard = httpsCallable(functions, 'updateBoard');
+  const result = await updateBoard({ boardId, updates: boardData });
+  return result.data;
 };
 
 export const deleteBoard = async (projectId, boardId) => {
   console.log('API: Deleting board:', { projectId, boardId });
   try {
-    const response = await api.delete(`/boards/${boardId}`);
-    console.log('API: Board deletion response:', response.data);
-    return response.data;
+    const deleteBoard = httpsCallable(functions, 'deleteBoard');
+    const result = await deleteBoard({ boardId });
+    console.log('API: Board deletion response:', result.data);
+    return result.data;
   } catch (error) {
-    console.error('API: Error deleting board:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || error.message || 'Failed to delete board');
+    console.error('API: Error deleting board:', error.message);
+    throw new Error(error.message || 'Failed to delete board');
   }
 };
 
-// Columns API
-export const createColumn = async (projectId, boardId, columnData) => {
-  const response = await api.post(
-    `/projects/${projectId}/boards/${boardId}/columns`,
-    columnData
-  );
-  return response.data;
-};
-
-export const updateColumn = async (
-  projectId,
-  boardId,
-  columnId,
-  columnData
-) => {
-  const response = await api.put(
-    `/projects/${projectId}/boards/${boardId}/columns/${columnId}`,
-    columnData
-  );
-  return response.data;
-};
-
-export const deleteColumn = async (projectId, boardId, columnId) => {
-  const response = await api.delete(
-    `/projects/${projectId}/boards/${boardId}/columns/${columnId}`
-  );
-  return response.data;
-};
+// Note: Columns are managed automatically by Firebase functions when creating boards
+// Default columns (To Do, In Progress, Done) are created with each board
 
 // Tasks API
 export const fetchTasks = async (projectId, boardId, columnId) => {
-  const response = await api.get(
-    `/projects/${projectId}/boards/${boardId}/columns/${columnId}/tasks`
-  );
-  return response.data;
+  const getTasks = httpsCallable(functions, 'getTasks');
+  const result = await getTasks({ projectId, boardId, columnId });
+  return result.data;
 };
 
 export const createTask = async (projectId, boardId, columnId, taskData) => {
-  const response = await api.post(
-    `/tasks`,
-    {
-      ...taskData,
-      projectId,
-      boardId,
-      columnId
-    }
-  );
-  return response.data;
+  const createTask = httpsCallable(functions, 'createTask');
+  const result = await createTask({
+    projectId,
+    boardId,
+    columnId,
+    ...taskData
+  });
+  return result.data;
 };
 
 export const updateTask = async (
@@ -174,19 +107,29 @@ export const updateTask = async (
   taskId,
   taskData
 ) => {
-  const response = await api.patch(`/tasks/${taskId}`, taskData);
-  return response.data;
+  const updateTask = httpsCallable(functions, 'updateTask');
+  const result = await updateTask({ taskId, updates: taskData });
+  return result.data;
 };
 
 export const deleteTask = async (taskId) => {
-  const response = await api.delete(`/tasks/${taskId}`);
-  return response.data;
+  const deleteTask = httpsCallable(functions, 'deleteTask');
+  const result = await deleteTask({ taskId });
+  return result.data;
 };
 
-// Push Notifications API
-export const registerPushSubscription = async (subscription) => {
-  const response = await api.post("/subscribe", subscription);
-  return response.data;
+// Timer API
+export const startTimer = async (taskId) => {
+  const startTimer = httpsCallable(functions, 'startTimer');
+  const result = await startTimer({ taskId });
+  return result.data;
 };
 
-export default api;
+export const stopTimer = async (taskId, timeElapsed) => {
+  const stopTimer = httpsCallable(functions, 'stopTimer');
+  const result = await stopTimer({ taskId, timeElapsed });
+  return result.data;
+};
+
+// Note: Push notifications will be handled through Firebase Cloud Messaging
+// when implemented in the migration

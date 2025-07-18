@@ -3,6 +3,7 @@ import { useDrag } from "react-dnd";
 import styled from "@emotion/styled";
 import Timer from "./Timer";
 import { useStore } from "../store";
+import { formatDateForDisplay } from "../utils/dateUtils";
 
 const CardContainer = styled.div`
   background: white;
@@ -61,25 +62,59 @@ const MetaTag = styled.span`
   letter-spacing: 0.5px;
 `;
 
+// Helper function to safely convert various date formats to Date object
+const convertToDate = (dateValue) => {
+  if (dateValue instanceof Date) {
+    return dateValue;
+  } else if (dateValue?.toDate && typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  } else {
+    return new Date(dateValue);
+  }
+};
+
+// Helper function to calculate days difference from today
+const calculateDaysDifference = (date) => {
+  if (isNaN(date.getTime())) return null;
+  const today = new Date();
+  return Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+};
+
+// Helper function to get due date colors based on days difference
+const getDueDateColors = (dueDate) => {
+  const date = convertToDate(dueDate);
+  const diffDays = calculateDaysDifference(date);
+  
+  if (diffDays === null) {
+    return {
+      background: "#f5f5f5", // Invalid date - gray
+      color: "#666"
+    };
+  }
+  
+  if (diffDays < 0) {
+    return {
+      background: "#ffebee", // Overdue - light red
+      color: "#c62828"       // Overdue - red
+    };
+  }
+  
+  if (diffDays <= 1) {
+    return {
+      background: "#fff3e0", // Due soon - light orange
+      color: "#ef6c00"       // Due soon - orange
+    };
+  }
+  
+  return {
+    background: "#e8f5e8", // Normal - light green
+    color: "#2e7d32"       // Normal - green
+  };
+};
+
 const DueDateTag = styled(MetaTag)`
-  background: ${(props) => {
-    const dueDate = new Date(props.dueDate);
-    const today = new Date();
-    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return "#ffebee"; // Overdue - light red
-    if (diffDays <= 1) return "#fff3e0"; // Due soon - light orange
-    return "#e8f5e8"; // Normal - light green
-  }};
-  color: ${(props) => {
-    const dueDate = new Date(props.dueDate);
-    const today = new Date();
-    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return "#c62828"; // Overdue - red
-    if (diffDays <= 1) return "#ef6c00"; // Due soon - orange
-    return "#2e7d32"; // Normal - green
-  }};
+  background: ${(props) => getDueDateColors(props.dueDate).background};
+  color: ${(props) => getDueDateColors(props.dueDate).color};
 `;
 
 const PriorityTag = styled(MetaTag)`
@@ -134,6 +169,9 @@ const formatStatus = (status) => {
 };
 
 const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
+  // Add this console.log to inspect the task object
+  console.log('Inspecting task in TaskCard:', task);
+
   const [{ isDragging }, drag] = useDrag({
     type: "task",
     item: { id: task._id },
@@ -175,14 +213,6 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
     }
   };
 
-  const formatDueDate = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <CardContainer ref={drag} isDragging={isDragging}>
@@ -231,9 +261,9 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
           <PriorityTag priority={task.priority}>{task.priority}</PriorityTag>
         )}
         {task.status && <StatusTag>{formatStatus(task.status)}</StatusTag>}
-        {task.dueDate && (
+        {formatDateForDisplay(task.dueDate) && (
           <DueDateTag dueDate={task.dueDate}>
-            Due {formatDueDate(task.dueDate)}
+            Due {formatDateForDisplay(task.dueDate)}
           </DueDateTag>
         )}
       </TaskMeta>

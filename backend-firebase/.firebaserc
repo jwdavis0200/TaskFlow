@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "taskflow-pro-dev",
+    "production": "taskflow-production"
+  }
+}

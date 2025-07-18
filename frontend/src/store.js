@@ -8,16 +8,19 @@ import {
   createBoard,
   updateBoard,
   deleteBoard,
-  createColumn,
-  updateColumn,
-  deleteColumn,
   fetchTasks,
   createTask,
   updateTask as updateTaskAPI,
   deleteTask,
-} from "./services/api";
+} from "./services/api.js";
+import { signInAnonymously, onAuthStateChange } from "./firebase/auth";
 
 export const useStore = create((set, get) => ({
+  // Auth State
+  user: null,
+  isAuthenticated: false,
+  authLoading: true,
+
   // State for Projects
   projects: [],
   selectedProject: null,
@@ -39,6 +42,31 @@ export const useStore = create((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
+  // Auth Actions
+  setUser: (user) => set({ user, isAuthenticated: !!user, authLoading: false }),
+  signInAnonymous: async () => {
+    try {
+      set({ authLoading: true });
+      const user = await signInAnonymously();
+      set({ user, isAuthenticated: true, authLoading: false });
+      return user;
+    } catch (error) {
+      console.error('Error signing in anonymously:', error);
+      set({ error, authLoading: false });
+      throw error;
+    }
+  },
+  initAuth: () => {
+    return onAuthStateChange((user) => {
+      set({ user, isAuthenticated: !!user, authLoading: false });
+      if (user) {
+        // Auto-load projects when user is authenticated
+        const { loadProjects } = get();
+        loadProjects();
+      }
+    });
+  },
+
   // Project Actions
   loadProjects: async () => {
     set({ loading: true, error: null });
@@ -46,10 +74,15 @@ export const useStore = create((set, get) => ({
       console.log("Store: Fetching projects from API...");
       const projects = await fetchProjects();
       console.log("Store: Projects fetched:", projects);
-      // Map boardsList virtual to boards for UI consistency
+      // Firebase functions return boards directly (not boardsList)
+      // Map Firebase 'id' to '_id' for compatibility with existing components
       const projectsWithBoards = projects.map(project => ({
         ...project,
-        boards: project.boardsList || []
+        _id: project.id, // Map Firebase id to _id for compatibility
+        boards: (project.boards || []).map(board => ({
+          ...board,
+          _id: board.id // Also map board ids
+        }))
       }));
       console.log("Store: Projects with boards mapped:", projectsWithBoards);
       set({ projects: projectsWithBoards, loading: false });
@@ -61,12 +94,16 @@ export const useStore = create((set, get) => ({
   addProject: async (projectData) => {
     set({ loading: true, error: null });
     try {
-      const newProject = await createProject(projectData);
-      set((state) => ({
-        projects: [...state.projects, newProject],
-        loading: false,
-      }));
+      console.log('Store: Creating project with data:', projectData);
+      const result = await createProject(projectData);
+      console.log('Store: Project creation result:', result);
+      
+      // Firebase function returns {projectId, boardId}, so reload projects to get full data
+      await get().loadProjects();
+      
+      set({ loading: false });
     } catch (error) {
+      console.error('Store: Error creating project:', error);
       set({ error, loading: false });
     }
   },
@@ -120,8 +157,25 @@ export const useStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const boards = await fetchBoards(projectId);
+      // Map Firebase 'id' to '_id' for compatibility with existing components
+      const boardsWithCompatibleIds = boards.map(board => ({
+        ...board,
+        _id: board.id,
+        columns: (board.columns || []).map(column => ({
+          ...column,
+          _id: column.id,
+          tasks: (column.tasks || []).map((task, index) => ({
+            ...task,
+            _id: task.id || task._id || `task-${column.id}-${index}`, // Ensure unique key
+            // Convert ISO strings back to Date objects for consistent frontend handling
+            dueDate: task.dueDate ? new Date(task.dueDate) : null,
+            createdAt: task.createdAt ? new Date(task.createdAt) : null,
+            updatedAt: task.updatedAt ? new Date(task.updatedAt) : null
+          }))
+        }))
+      }));
       // Clear tasks when loading boards for a different project
-      set({ boards, tasks: [], loading: false });
+      set({ boards: boardsWithCompatibleIds, tasks: [], loading: false });
     } catch (error) {
       set({ error, loading: false });
     }
@@ -269,7 +323,16 @@ export const useStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const tasks = await fetchTasks(projectId, boardId, columnId);
-      set({ tasks, loading: false });
+      // Apply proper date conversion - backend now returns ISO strings
+      const tasksWithConvertedDates = tasks.map(task => ({
+        ...task,
+        _id: task.id || task._id,
+        // Convert ISO strings back to Date objects
+        dueDate: task.dueDate ? new Date(task.dueDate) : null,
+        createdAt: task.createdAt ? new Date(task.createdAt) : null,
+        updatedAt: task.updatedAt ? new Date(task.updatedAt) : null
+      }));
+      set({ tasks: tasksWithConvertedDates, loading: false });
     } catch (error) {
       set({ error, loading: false });
     }
@@ -278,15 +341,28 @@ export const useStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const newTask = await createTask(projectId, boardId, columnId, taskData);
+      
+      // Firebase functions now return ISO strings for dates, convert to Date objects
+      const normalizedTask = {
+        ...newTask,
+        _id: newTask.id,
+        // Convert ISO strings back to Date objects for consistent frontend handling
+        dueDate: newTask.dueDate ? new Date(newTask.dueDate) : null,
+        createdAt: newTask.createdAt ? new Date(newTask.createdAt) : null,
+        updatedAt: newTask.updatedAt ? new Date(newTask.updatedAt) : null
+      };
+      
+      console.log("Store: Task created successfully:", normalizedTask);
+      
       set((state) => ({
-        tasks: [...state.tasks, newTask],
+        tasks: [...state.tasks, normalizedTask],
         boards: state.boards.map((board) =>
           board._id === boardId
             ? {
                 ...board,
                 columns: board.columns.map((column) =>
                   column._id === columnId
-                    ? { ...column, tasks: [...(column.tasks || []), newTask] }
+                    ? { ...column, tasks: [...(column.tasks || []), normalizedTask] }
                     : column
                 ),
               }
@@ -298,7 +374,7 @@ export const useStore = create((set, get) => ({
                 ...state.selectedBoard,
                 columns: state.selectedBoard.columns.map((column) =>
                   column._id === columnId
-                    ? { ...column, tasks: [...(column.tasks || []), newTask] }
+                    ? { ...column, tasks: [...(column.tasks || []), normalizedTask] }
                     : column
                 ),
               }
@@ -306,6 +382,7 @@ export const useStore = create((set, get) => ({
         loading: false,
       }));
     } catch (error) {
+      console.error("Store: Error creating task:", error);
       set({ error, loading: false });
     }
   },
@@ -361,8 +438,16 @@ export const useStore = create((set, get) => ({
         );
 
         if (newColumn) {
+          const normalizedTask = {
+            ...updatedTask,
+            _id: updatedTask.id,
+            // Convert ISO strings back to Date objects for consistent frontend handling
+            createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt) : null,
+            updatedAt: updatedTask.updatedAt ? new Date(updatedTask.updatedAt) : null,
+            dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate) : null
+          };
           // Add the task to the new column
-          newColumn.tasks.push(updatedTask);
+          newColumn.tasks.push(normalizedTask);
         } else if (taskFound) {
           // If the new column doesn't exist (which is unlikely),
           // add the task back to its original column to prevent data loss.
