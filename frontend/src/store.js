@@ -13,7 +13,7 @@ import {
   updateTask as updateTaskAPI,
   deleteTask,
 } from "./services/api.js";
-import { signIn, signUp, signInAnonymously, onAuthStateChange, logout } from "./firebase/auth";
+import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 
 export const useStore = create((set, get) => ({
   // Auth State
@@ -85,25 +85,20 @@ export const useStore = create((set, get) => ({
       throw error;
     }
   },
-  signInAnonymous: async () => {
-    try {
-      set({ authLoading: true });
-      const user = await signInAnonymously();
-      set({ user, isAuthenticated: true, authLoading: false });
-      return user;
-    } catch (error) {
-      console.error('Error signing in anonymously:', error);
-      set({ error, authLoading: false });
-      throw error;
-    }
-  },
   initAuth: () => {
+    // Clear any existing anonymous sessions first
+    clearAnonymousSessions();
+    
     return onAuthStateChange((user) => {
-      set({ user, isAuthenticated: !!user, authLoading: false });
-      if (user) {
+      // Only authenticate non-anonymous users
+      if (user && !user.isAnonymous) {
+        set({ user, isAuthenticated: true, authLoading: false });
         // Auto-load projects when user is authenticated
         const { loadProjects } = get();
         loadProjects();
+      } else {
+        // Sign out anonymous users or null users
+        set({ user: null, isAuthenticated: false, authLoading: false });
       }
     });
   },
