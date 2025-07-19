@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
+import Modal from './common/Modal';
+import ProjectForm from './ProjectForm';
 import { HiMenuAlt2, HiOutlineLogout } from 'react-icons/hi';
 
 const SidebarContainer = styled.div`
@@ -228,18 +230,14 @@ const Sidebar = () => {
     }
   };
 
-  const handleCreateProject = async () => {
-    const projectName = prompt('Enter project name:');
-    if (projectName && projectName.trim()) {
-      try {
-        await addProject({
-          name: projectName.trim(),
-          description: `Project: ${projectName.trim()}`
-        });
-      } catch (error) {
-        alert('Failed to create project. Please try again.');
-      }
-    }
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+
+  const handleCreateProject = () => {
+    setShowCreateProjectModal(true);
+  };
+
+  const handleCloseProjectModal = () => {
+    setShowCreateProjectModal(false);
   };
 
   // Handle keyboard navigation
@@ -300,6 +298,13 @@ const Sidebar = () => {
           <ProjectsList projects={projects} />
         </SidebarContent>
       </SidebarContainer>
+      
+      <Modal 
+        isOpen={showCreateProjectModal} 
+        onClose={handleCloseProjectModal}
+      >
+        <ProjectForm onClose={handleCloseProjectModal} />
+      </Modal>
     </>
   );
 };

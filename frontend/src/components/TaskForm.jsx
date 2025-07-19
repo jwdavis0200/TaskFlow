@@ -1,154 +1,22 @@
 import React, { useState, useEffect } from "react";
-import styled from "@emotion/styled";
 import { useStore } from "../store";
 import { formatDateForInput, createDateFromInput } from "../utils/dateUtils";
+import {
+  FormContainer,
+  FormHeader,
+  FormTitle,
+  FormBody,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  Select,
+  FormActions,
+  PrimaryButton,
+  SecondaryButton,
+  LoadingSpinner
+} from "./common/FormComponents";
 
-const FormContainer = styled.div`
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-`;
-
-const FormHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 16px 20px;
-  text-align: center;
-`;
-
-const FormTitle = styled.h2`
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-`;
-
-const FormBody = styled.form`
-  padding: 20px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
-  font-size: 14px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &:hover {
-    border-color: #ccc;
-  }
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  min-height: 80px;
-  resize: vertical;
-  font-family: inherit;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &:hover {
-    border-color: #ccc;
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &:hover {
-    border-color: #ccc;
-  }
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-`;
-
-const Button = styled.button`
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 100px;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(45deg, #667eea, #764ba2);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-
-  &:hover {
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-
-  &:hover {
-    background: #eeeeee;
-    border-color: #ccc;
-  }
-`;
 
 const TaskForm = ({ task, onClose }) => {
   const addTask = useStore((state) => state.addTask);
@@ -332,6 +200,7 @@ const TaskForm = ({ task, onClose }) => {
             Cancel
           </SecondaryButton>
           <PrimaryButton type="submit" disabled={isSubmitting}>
+            {isSubmitting && <LoadingSpinner />}
             {isSubmitting ? "Saving..." : task ? "Update Task" : "Add Task"}
           </PrimaryButton>
         </FormActions>

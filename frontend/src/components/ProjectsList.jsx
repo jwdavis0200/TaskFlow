@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import BoardsList from './BoardsList';
+import Modal from './common/Modal';
+import BoardForm from './BoardForm';
 
 const ProjectsContainer = styled.div`
   display: flex;
@@ -107,7 +109,7 @@ const EmptyState = styled.div`
   border: 2px dashed #e2e8f0;
 `;
 
-const ProjectListItem = ({ project }) => {
+const ProjectListItem = ({ project, onShowBoardModal }) => {
   const {
     setSelectedProject,
     loadBoards,
@@ -148,24 +150,9 @@ const ProjectListItem = ({ project }) => {
     }
   };
 
-  const handleAddBoard = async (e) => {
+  const handleAddBoard = (e) => {
     e.stopPropagation();
-    const boardName = prompt('Enter board name:');
-    if (boardName && boardName.trim()) {
-      try {
-        console.log('Creating board for project:', project._id);
-        await addBoard(project._id, {
-          name: boardName.trim(),
-          description: `Board: ${boardName.trim()}`
-        });
-        // Reload all projects to get updated boards data
-        await loadProjects();
-        console.log('Board created successfully and projects reloaded');
-      } catch (error) {
-        console.error('Error creating board:', error);
-        alert(`Failed to create board: ${error.message || 'Unknown error'}`);
-      }
-    }
+    onShowBoardModal(project._id);
   };
   
   return (
@@ -194,6 +181,19 @@ const ProjectListItem = ({ project }) => {
 };
 
 const ProjectsList = ({ projects }) => {
+  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+
+  const handleShowBoardModal = (projectId) => {
+    setSelectedProjectId(projectId);
+    setShowCreateBoardModal(true);
+  };
+
+  const handleCloseBoardModal = () => {
+    setShowCreateBoardModal(false);
+    setSelectedProjectId(null);
+  };
+
   if (!projects || projects.length === 0) {
     return (
       <EmptyState>
@@ -204,11 +204,27 @@ const ProjectsList = ({ projects }) => {
   }
 
   return (
-    <ProjectsContainer>
-      {projects.map((project) => (
-        <ProjectListItem key={project._id} project={project} />
-      ))}
-    </ProjectsContainer>
+    <>
+      <ProjectsContainer>
+        {projects.map((project) => (
+          <ProjectListItem 
+            key={project._id} 
+            project={project} 
+            onShowBoardModal={handleShowBoardModal}
+          />
+        ))}
+      </ProjectsContainer>
+      
+      <Modal 
+        isOpen={showCreateBoardModal} 
+        onClose={handleCloseBoardModal}
+      >
+        <BoardForm 
+          projectId={selectedProjectId} 
+          onClose={handleCloseBoardModal} 
+        />
+      </Modal>
+    </>
   );
 };
 
