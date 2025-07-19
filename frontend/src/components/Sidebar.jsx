@@ -55,8 +55,8 @@ const ToggleButton = styled.button`
   left: ${props => props.isOpen ? '272px' : '20px'};
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
+  background: transparent;
+  color: #333;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -64,19 +64,17 @@ const ToggleButton = styled.button`
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  box-shadow: 2px 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: none;
   transition: all 0.3s ease;
   z-index: 1001;
   
   &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
-    box-shadow: 4px 4px 12px rgba(59, 130, 246, 0.4);
   }
   
   &:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
+    outline: none;
   }
   
   &:active {
@@ -149,34 +147,7 @@ const LogoutButton = styled.button`
   }
 `;
 
-const CloseButton = styled.button`
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  color: #64748b;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: #f1f5f9;
-    color: #334155;
-  }
-  
-  &:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
+
 
 const TitleIcon = styled.span`
   font-size: 24px;
@@ -276,12 +247,7 @@ const Sidebar = () => {
               <TitleIcon>📋</TitleIcon>
               Projects
             </SidebarTitle>
-            <CloseButton
-              onClick={toggleSidebar}
-              aria-label="Close sidebar"
-            >
-              ✕
-            </CloseButton>
+
           </SidebarHeaderTop>
           <AddButton onClick={handleCreateProject}>
             <span>+</span>
