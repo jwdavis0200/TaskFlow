@@ -3,22 +3,30 @@ import styled from "@emotion/styled";
 import { useStore } from "../store";
 
 const AuthContainer = styled.div`
-  min-height: 100vh;
-  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 16px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  margin: 0;
+  box-sizing: border-box;
   
   @media (max-width: 480px) {
-    padding: 8px;
+    padding: 16px 8px;
+    /* Keep vertical centering but add some top margin for better mobile UX */
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh; /* Use dynamic viewport height for better mobile support */
+  }
+  
+  @media (max-width: 480px) and (max-height: 600px) {
+    /* For very short mobile screens, adjust to prevent overflow */
     align-items: flex-start;
-    padding-top: 10px;
+    padding-top: 20px;
   }
 `;
 
@@ -37,7 +45,7 @@ const AuthCard = styled.div`
     max-width: calc(100vw - 32px);
     border-radius: 12px;
     max-height: 95vh;
-    margin: 0 16px;
+    /* Remove explicit margins - let flexbox center the card */
   }
   
   @media (max-height: 600px) {
