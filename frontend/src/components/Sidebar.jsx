@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
-import { HiMenuAlt2 } from 'react-icons/hi';
+import { HiMenuAlt2, HiOutlineLogout } from 'react-icons/hi';
 
 const SidebarContainer = styled.div`
   position: relative;
@@ -83,6 +83,41 @@ const ToggleButton = styled.button`
   
   @media (min-width: 769px) {
     left: ${props => props.isOpen ? '272px' : '20px'};
+  }
+`;
+
+const FloatingLogoutButton = styled.button`
+  position: fixed;
+  top: 20px;
+  left: ${props => props.isOpen ? '220px' : '-50px'};
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: none;
+  transition: all 0.3s ease;
+  z-index: 1001;
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  @media (min-width: 769px) {
+    left: ${props => props.isOpen ? '220px' : '-50px'};
   }
 `;
 
@@ -226,6 +261,14 @@ const Sidebar = () => {
   
   return (
     <>
+      <FloatingLogoutButton
+        isOpen={isSidebarOpen}
+        onClick={handleLogout}
+        aria-label="Sign out"
+        title="Sign out"
+      >
+        <HiOutlineLogout size={20} />
+      </FloatingLogoutButton>
       <ToggleButton
         isOpen={isSidebarOpen}
         onClick={toggleSidebar}
@@ -247,7 +290,6 @@ const Sidebar = () => {
               <TitleIcon>📋</TitleIcon>
               Projects
             </SidebarTitle>
-
           </SidebarHeaderTop>
           <AddButton onClick={handleCreateProject}>
             <span>+</span>
@@ -257,11 +299,6 @@ const Sidebar = () => {
         <SidebarContent>
           <ProjectsList projects={projects} />
         </SidebarContent>
-        <SidebarFooter>
-          <LogoutButton onClick={handleLogout}>
-            🚪 Sign Out
-          </LogoutButton>
-        </SidebarFooter>
       </SidebarContainer>
     </>
   );
