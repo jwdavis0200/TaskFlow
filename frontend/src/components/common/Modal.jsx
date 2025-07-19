@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 
 const ModalOverlay = styled.div`
@@ -11,7 +12,7 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999;
   backdrop-filter: blur(5px);
   padding: 0;
   box-sizing: border-box;
@@ -85,13 +86,17 @@ const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true }) => {
     }
   };
 
-  return (
+  const modalContent = (
     <ModalOverlay onClick={handleOverlayClick}>
       <ModalContent>
         {children}
       </ModalContent>
     </ModalOverlay>
   );
+
+  // Use React Portal to render modal at document.body level
+  // This escapes any parent container's CSS constraints (like overflow: hidden)
+  return createPortal(modalContent, document.body);
 };
 
 export default Modal;

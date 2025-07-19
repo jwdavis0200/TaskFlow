@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { useStore } from '../store';
 import BoardsList from './BoardsList';
 import Modal from './common/Modal';
+import ConfirmationModal from './common/ConfirmationModal';
 import BoardForm from './BoardForm';
 import ProjectForm from './ProjectForm';
 
@@ -114,11 +115,10 @@ const EmptyState = styled.div`
   border: 2px dashed #e2e8f0;
 `;
 
-const ProjectListItem = ({ project, onShowBoardModal, onEditProject }) => {
+const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeleteProject }) => {
   const {
     setSelectedProject,
-    loadBoards,
-    deleteProject
+    loadBoards
   } = useStore();
   
   const handleProjectClick = () => {
@@ -131,15 +131,9 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject }) => {
     onEditProject(project);
   };
 
-  const handleDeleteProject = async (e) => {
+  const handleDeleteProject = (e) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete "${project.name}"? This will also delete all boards and tasks in this project.`)) {
-      try {
-        await deleteProject(project._id);
-      } catch (error) {
-        alert('Failed to delete project. Please try again.');
-      }
-    }
+    onDeleteProject(project);
   };
 
   const handleAddBoard = (e) => {
@@ -173,10 +167,14 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject }) => {
 };
 
 const ProjectsList = ({ projects }) => {
+  const deleteProject = useStore((state) => state.deleteProject);
+  
   const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [showEditProjectModal, setShowEditProjectModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleShowBoardModal = (projectId) => {
     setSelectedProjectId(projectId);
@@ -198,6 +196,31 @@ const ProjectsList = ({ projects }) => {
     setSelectedProject(null);
   };
 
+  const handleDeleteProject = (project) => {
+    setSelectedProject(project);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedProject(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProject) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteProject(selectedProject._id);
+      handleCloseDeleteModal();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      // Keep modal open on error so user can retry
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!projects || projects.length === 0) {
     return (
       <EmptyState>
@@ -216,6 +239,7 @@ const ProjectsList = ({ projects }) => {
             project={project} 
             onShowBoardModal={handleShowBoardModal}
             onEditProject={handleEditProject}
+            onDeleteProject={handleDeleteProject}
           />
         ))}
       </ProjectsContainer>
@@ -239,6 +263,17 @@ const ProjectsList = ({ projects }) => {
           onClose={handleCloseEditModal} 
         />
       </Modal>
+      
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${selectedProject?.name}"?`}
+        warningText="This will permanently delete all boards and tasks in this project. This action cannot be undone."
+        confirmText="Delete Project"
+        isLoading={isDeleting}
+      />
     </>
   );
 };
