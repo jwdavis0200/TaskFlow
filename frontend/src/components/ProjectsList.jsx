@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import BoardsList from './BoardsList';
 import Modal from './common/Modal';
 import BoardForm from './BoardForm';
+import ProjectForm from './ProjectForm';
 
 const ProjectsContainer = styled.div`
   display: flex;
@@ -113,11 +114,10 @@ const EmptyState = styled.div`
   border: 2px dashed #e2e8f0;
 `;
 
-const ProjectListItem = ({ project, onShowBoardModal }) => {
+const ProjectListItem = ({ project, onShowBoardModal, onEditProject }) => {
   const {
     setSelectedProject,
     loadBoards,
-    updateProject,
     deleteProject
   } = useStore();
   
@@ -126,19 +126,9 @@ const ProjectListItem = ({ project, onShowBoardModal }) => {
     loadBoards(project._id);
   };
 
-  const handleEditProject = async (e) => {
+  const handleEditProject = (e) => {
     e.stopPropagation();
-    const newName = prompt('Enter new project name:', project.name);
-    if (newName && newName.trim() && newName !== project.name) {
-      try {
-        await updateProject(project._id, {
-          ...project,
-          name: newName.trim()
-        });
-      } catch (error) {
-        alert('Failed to update project. Please try again.');
-      }
-    }
+    onEditProject(project);
   };
 
   const handleDeleteProject = async (e) => {
@@ -185,6 +175,8 @@ const ProjectListItem = ({ project, onShowBoardModal }) => {
 const ProjectsList = ({ projects }) => {
   const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const handleShowBoardModal = (projectId) => {
     setSelectedProjectId(projectId);
@@ -194,6 +186,16 @@ const ProjectsList = ({ projects }) => {
   const handleCloseBoardModal = () => {
     setShowCreateBoardModal(false);
     setSelectedProjectId(null);
+  };
+
+  const handleEditProject = (project) => {
+    setSelectedProject(project);
+    setShowEditProjectModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditProjectModal(false);
+    setSelectedProject(null);
   };
 
   if (!projects || projects.length === 0) {
@@ -213,6 +215,7 @@ const ProjectsList = ({ projects }) => {
             key={project._id} 
             project={project} 
             onShowBoardModal={handleShowBoardModal}
+            onEditProject={handleEditProject}
           />
         ))}
       </ProjectsContainer>
@@ -224,6 +227,16 @@ const ProjectsList = ({ projects }) => {
         <BoardForm 
           projectId={selectedProjectId} 
           onClose={handleCloseBoardModal} 
+        />
+      </Modal>
+      
+      <Modal 
+        isOpen={showEditProjectModal} 
+        onClose={handleCloseEditModal}
+      >
+        <ProjectForm 
+          project={selectedProject} 
+          onClose={handleCloseEditModal} 
         />
       </Modal>
     </>
