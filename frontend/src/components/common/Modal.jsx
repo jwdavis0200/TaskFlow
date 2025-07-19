@@ -13,6 +13,14 @@ const ModalOverlay = styled.div`
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  padding: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  
+  @media (max-width: 768px) {
+    align-items: flex-start;
+    padding: 0;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -41,9 +49,11 @@ const ModalContent = styled.div`
 
   @media (max-width: 768px) {
     max-height: 92vh;
-    margin: 1vh auto;
-    width: 95%;
+    margin: 4vh 5%;
+    width: 90%;
     max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   /* Ensure scrolling works properly */
