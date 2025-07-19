@@ -56,6 +56,10 @@ const ProjectActions = styled.div`
   ${ProjectItem}:hover & {
     opacity: 1;
   }
+  
+  @media (max-width: 768px) {
+    opacity: 1;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -113,10 +117,8 @@ const ProjectListItem = ({ project, onShowBoardModal }) => {
   const {
     setSelectedProject,
     loadBoards,
-    loadProjects,
     updateProject,
-    deleteProject,
-    addBoard
+    deleteProject
   } = useStore();
   
   const handleProjectClick = () => {
