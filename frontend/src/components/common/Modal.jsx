@@ -18,8 +18,8 @@ const ModalOverlay = styled.div`
   overflow-y: auto;
   
   @media (max-width: 768px) {
-    align-items: flex-start;
-    padding: 0;
+    align-items: center;
+    padding: 2vh 0;
   }
 `;
 
