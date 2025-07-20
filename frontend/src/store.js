@@ -588,34 +588,51 @@ export const useStore = create((set, get) => ({
     let taskToMove = null;
     let sourceColumnId = null;
 
-    // Find the task in the current board's columns
-    const currentBoard = state.boards.find((board) => board._id === boardId) || state.selectedBoard;
-    if (!currentBoard) {
-      console.error('Board not found for moveTask');
-      return;
+    // Find the task in the boards array first (primary source of truth)
+    const boardInArray = state.boards.find((board) => board._id === boardId);
+    if (boardInArray) {
+      for (const column of boardInArray.columns) {
+        const foundTask = column.tasks?.find((task) => task._id === taskId);
+        if (foundTask) {
+          taskToMove = foundTask;
+          sourceColumnId = column._id;
+          break;
+        }
+      }
     }
 
-    // Find the task in the board's columns
-    for (const column of currentBoard.columns) {
-      const foundTask = column.tasks?.find((task) => task._id === taskId);
-      if (foundTask) {
-        taskToMove = foundTask;
-        sourceColumnId = column._id;
-        break;
+    // If not found in boards array, try selectedBoard as fallback
+    if (!taskToMove && state.selectedBoard && state.selectedBoard._id === boardId) {
+      for (const column of state.selectedBoard.columns) {
+        const foundTask = column.tasks?.find((task) => task._id === taskId);
+        if (foundTask) {
+          taskToMove = foundTask;
+          sourceColumnId = column._id;
+          break;
+        }
       }
     }
 
     if (!taskToMove) {
-      console.error('Task not found for moveTask:', taskId);
+      console.error('Task not found for moveTask:', { taskId, boardId, availableBoards: state.boards.map(b => b._id) });
       return;
     }
 
-    // Find destination column to map to status
-    const destColumn = currentBoard.columns.find(col => col._id === destColumnId);
+    // Find destination column to map to status (use the same board we found the task in)
+    const sourceBoard = boardInArray || state.selectedBoard;
+    const destColumn = sourceBoard.columns.find(col => col._id === destColumnId);
     const mappedStatus = destColumn ? destColumn.name.toLowerCase().replace(/\s+/g, '-') : taskToMove.status;
 
     // Optimistic update - Update state immediately
     set((state) => {
+      // Ensure the board exists in the boards array
+      const boardExists = state.boards.some(board => board._id === boardId);
+      if (!boardExists && state.selectedBoard && state.selectedBoard._id === boardId) {
+        // Add selectedBoard to boards array if it's missing
+        console.warn('Board found in selectedBoard but missing from boards array, adding it');
+        state.boards.push(state.selectedBoard);
+      }
+
       const newBoards = state.boards.map((board) => {
         if (board._id !== boardId) return board;
 
