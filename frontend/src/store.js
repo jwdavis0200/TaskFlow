@@ -453,7 +453,7 @@ export const useStore = create((set, get) => ({
         boardId,
         columnId,
         taskId,
-        { ...taskData, column: columnId }
+        taskData
       );
 
       console.log("Store updateTask: API response", updatedTask);
@@ -484,7 +484,7 @@ export const useStore = create((set, get) => ({
 
         // Find the new column and add the updated task
         const newColumn = boardToUpdate.columns.find(
-          (c) => c._id === updatedTask.column
+          (c) => c._id === updatedTask.columnId
         );
 
         if (newColumn) {

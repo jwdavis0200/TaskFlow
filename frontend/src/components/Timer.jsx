@@ -147,7 +147,8 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
       () => {
         setIsRunning(false);
         if (onTimerComplete) {
-          onTimerComplete(taskId);
+          const currentTime = timerRef.current?.getTimeSpent() || time;
+          onTimerComplete(taskId, currentTime);
         }
       }
     );
@@ -160,15 +161,10 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
     const currentTime = timerRef.current.getTimeSpent();
     timerRef.current.stop();
     setIsRunning(false);
-    
-    // Update the database with the current time when stopping
-    if (onTimeUpdate) {
-      onTimeUpdate(taskId, currentTime);
-    }
-    
-    // Call completion callback to update task state
+    i
+    // Call completion callback with final time - this is the authoritative update
     if (onTimerComplete) {
-      onTimerComplete(taskId);
+      onTimerComplete(taskId, currentTime);
     }
   };
 
