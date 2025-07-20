@@ -6,55 +6,59 @@ import { PlayArrow, Pause, Replay } from "@mui/icons-material";
 
 const TimerContainer = styled.div`
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
 `;
 
 const TimeDisplay = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #343a40;
-  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #666;
+  margin-right: 0.5rem;
+  min-width: 65px;
+  font-family: monospace;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 0.25rem;
+  align-items: center;
 `;
 
 const Button = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 4px;
-  font-weight: 500;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 120px;
+  transition: all 0.3s ease;
+  padding: 0;
+  font-size: 14px;
 
   ${(props) =>
     (props.primary &&
       css`
-        background-color: #4361ee;
+        background-color: #667eea;
         color: white;
 
         &:hover {
-          background-color: #3a56d4;
+          background-color: #5a6fd8;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
         }
 
         &:disabled {
           background-color: #b8c1e9;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
       `) ||
     (props.secondary &&
@@ -64,11 +68,15 @@ const Button = styled.button`
 
         &:hover {
           background-color: #d63e64;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(239, 71, 111, 0.3);
         }
 
         &:disabled {
           background-color: #f498b9;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
       `) ||
     (props.tertiary &&
@@ -78,6 +86,8 @@ const Button = styled.button`
 
         &:hover {
           background-color: #05c091;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(6, 214, 160, 0.3);
         }
       `)}
 `;
@@ -175,16 +185,16 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
 
   return (
     <TimerContainer>
-      <TimeDisplay>Time Spent: {formatTime(time)}</TimeDisplay>
+      <TimeDisplay>{formatTime(time)}</TimeDisplay>
       <ButtonGroup>
-        <Button primary onClick={handleStart} disabled={isRunning}>
-          <PlayArrow fontSize="small" /> Start
+        <Button primary onClick={handleStart} disabled={isRunning} title="Start Timer">
+          <PlayArrow sx={{ fontSize: 16 }} />
         </Button>
-        <Button secondary onClick={handleStop} disabled={!isRunning}>
-          <Pause fontSize="small" /> Stop
+        <Button secondary onClick={handleStop} disabled={!isRunning} title="Stop Timer">
+          <Pause sx={{ fontSize: 16 }} />
         </Button>
-        <Button tertiary onClick={handleReset}>
-          <Replay fontSize="small" /> Reset
+        <Button tertiary onClick={handleReset} title="Reset Timer">
+          <Replay sx={{ fontSize: 16 }} />
         </Button>
       </ButtonGroup>
     </TimerContainer>

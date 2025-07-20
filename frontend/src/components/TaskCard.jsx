@@ -150,9 +150,7 @@ const StatusTag = styled(MetaTag)`
 `;
 
 const TimerContainer = styled.div`
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
+  margin-top: 8px;
 `;
 
 const formatStatus = (status) => {
