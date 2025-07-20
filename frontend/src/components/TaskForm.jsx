@@ -27,7 +27,7 @@ const TaskForm = ({ task, onClose }) => {
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [status, setStatus] = useState("To Do");
-  const [priority, setPriority] = useState("Medium");
+  const [priority, setPriority] = useState("medium");
   const [columnId, setColumnId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +37,7 @@ const TaskForm = ({ task, onClose }) => {
       setDescription(task.description || "");
       setDueDate(formatDateForInput(task.dueDate));
       setStatus(task.status || "To Do");
-      setPriority(task.priority || "Medium");
+      setPriority(task.priority || "medium");
       setColumnId(task.columnId || "");
     }
   }, [task]);
