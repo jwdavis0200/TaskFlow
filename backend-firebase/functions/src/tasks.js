@@ -57,7 +57,7 @@ exports.getTasks = onCall(async (request) => {
  */
 exports.createTask = onCall(async (request) => {
   const userId = validateAuth(request);
-  const { projectId, boardId, columnId, title, description, dueDate, priority, status } = request.data;
+  const { projectId, boardId, columnId, title, description, dueDate, priority } = request.data;
   
   if (!projectId || !boardId || !columnId || !title) {
     throw new HttpsError('invalid-argument', 'Project ID, Board ID, Column ID, and title are required');
@@ -79,7 +79,6 @@ exports.createTask = onCall(async (request) => {
       boardId,
       columnId,
       assignedTo: userId,
-      status: status || 'to-do',
       priority: priority || 'medium',
       timeSpent: 0, // Initialize timeSpent to 0
       isRunning: false,

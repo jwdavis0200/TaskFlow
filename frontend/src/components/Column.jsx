@@ -125,7 +125,11 @@ const Column = ({ column, onEdit, projectId, boardId }) => {
   return (
     <ColumnContainer ref={drop} isOver={isOver}>
       <ColumnHeader>
-        <ColumnTitle>{column.name}</ColumnTitle>
+        <ColumnTitle>
+          {column.name.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')}
+        </ColumnTitle>
         <TaskCount>{column.tasks?.length || 0}</TaskCount>
       </ColumnHeader>
       <TasksContainer>

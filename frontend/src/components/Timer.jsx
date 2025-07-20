@@ -166,7 +166,7 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
       onTimeUpdate(taskId, currentTime);
     }
     
-    // Call completion callback to update task status
+    // Call completion callback to update task state
     if (onTimerComplete) {
       onTimerComplete(taskId);
     }

@@ -144,27 +144,11 @@ const PriorityTag = styled(MetaTag)`
   }};
 `;
 
-const StatusTag = styled(MetaTag)`
-  background: #e3f2fd;
-  color: #1565c0;
-`;
 
 const TimerContainer = styled.div`
   margin-top: 8px;
 `;
 
-const formatStatus = (status) => {
-  switch (status) {
-    case "to-do":
-      return "To Do";
-    case "in-progress":
-      return "In Progress";
-    case "done":
-      return "Done";
-    default:
-      return status;
-  }
-};
 
 const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   // Add this console.log to inspect the task object
@@ -258,7 +242,6 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
         {task.priority && (
           <PriorityTag priority={task.priority}>{task.priority}</PriorityTag>
         )}
-        {task.status && <StatusTag>{formatStatus(task.status)}</StatusTag>}
         {formatDateForDisplay(task.dueDate) && (
           <DueDateTag dueDate={task.dueDate}>
             Due {formatDateForDisplay(task.dueDate)}

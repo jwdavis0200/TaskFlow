@@ -105,8 +105,8 @@ exports.createBoard = onCall(async (request) => {
         updatedAt: FieldValue.serverTimestamp()
       });
       
-      // Create default columns
-      const columnNames = ["To Do", "In Progress", "Done"];
+      // Create default columns  
+      const columnNames = ["to-do", "in-progress", "done"];
       const columnIds = [];
       
       columnNames.forEach((columnName, index) => {

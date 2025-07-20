@@ -15,20 +15,11 @@ import {
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 
-// Helper function to map task status to column
-const mapTaskToCorrectColumn = (task, columns) => {
-  if (!task.status || !columns || columns.length === 0) {
-    return columns[0]?._id || null; // Default to first column if no status or columns
-  }
-  
-  // Find column that matches the task status
-  // Convert status (e.g., "in-progress") to column name (e.g., "In Progress")
-  const statusAsColumnName = task.status.replace(/-/g, ' ').toLowerCase();
-  const matchingColumn = columns.find(column => 
-    column.name.toLowerCase() === statusAsColumnName
-  );
-  
-  return matchingColumn?._id || columns[0]?._id || null;
+// Helper function to format column name for display
+const formatColumnForDisplay = (columnName) => {
+  return columnName.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
 };
 
 export const useStore = create((set, get) => ({
@@ -211,36 +202,21 @@ export const useStore = create((set, get) => ({
       const boards = await fetchBoards(projectId);
       // Map Firebase 'id' to '_id' for compatibility with existing components
       const boardsWithCompatibleIds = boards.map(board => {
-        // First, prepare columns with _id mapping and empty tasks arrays
+        // Map columns with _id and preserve their existing tasks
         const columnsWithIds = (board.columns || []).map(column => ({
           ...column,
           _id: column.id,
-          tasks: [] // Start with empty, we'll populate based on task status
+          // Normalize tasks and keep them in their current column
+          tasks: (column.tasks || []).map((task, index) => ({
+            ...task,
+            _id: task.id || task._id || `task-${column.id}-${index}`,
+            // Convert ISO strings back to Date objects for consistent frontend handling
+            dueDate: task.dueDate ? new Date(task.dueDate) : null,
+            createdAt: task.createdAt ? new Date(task.createdAt) : null,
+            updatedAt: task.updatedAt ? new Date(task.updatedAt) : null,
+            column: column.id
+          }))
         }));
-
-        // Collect all tasks from all columns and normalize them
-        const allTasks = [];
-        (board.columns || []).forEach(column => {
-          (column.tasks || []).forEach((task, index) => {
-            allTasks.push({
-              ...task,
-              _id: task.id || task._id || `task-${column.id}-${index}`,
-              // Convert ISO strings back to Date objects for consistent frontend handling
-              dueDate: task.dueDate ? new Date(task.dueDate) : null,
-              createdAt: task.createdAt ? new Date(task.createdAt) : null,
-              updatedAt: task.updatedAt ? new Date(task.updatedAt) : null
-            });
-          });
-        });
-
-        // Map each task to its correct column based on status
-        allTasks.forEach(task => {
-          const correctColumnId = mapTaskToCorrectColumn(task, columnsWithIds);
-          const targetColumn = columnsWithIds.find(col => col._id === correctColumnId);
-          if (targetColumn) {
-            targetColumn.tasks.push({ ...task, column: correctColumnId });
-          }
-        });
 
         return {
           ...board,
@@ -618,10 +594,6 @@ export const useStore = create((set, get) => ({
       return;
     }
 
-    // Find destination column to map to status (use the same board we found the task in)
-    const sourceBoard = boardInArray || state.selectedBoard;
-    const destColumn = sourceBoard.columns.find(col => col._id === destColumnId);
-    const mappedStatus = destColumn ? destColumn.name.toLowerCase().replace(/\s+/g, '-') : taskToMove.status;
 
     // Optimistic update - Update state immediately
     set((state) => {
@@ -644,10 +616,10 @@ export const useStore = create((set, get) => ({
               tasks: column.tasks.filter((task) => task._id !== taskId)
             };
           } else if (column._id === destColumnId) {
-            // Add task to destination column with updated status
+            // Add task to destination column
             return {
               ...column,
-              tasks: [...(column.tasks || []), { ...taskToMove, column: destColumnId, status: mappedStatus }]
+              tasks: [...(column.tasks || []), { ...taskToMove, column: destColumnId }]
             };
           }
           return column;
@@ -668,10 +640,9 @@ export const useStore = create((set, get) => ({
     });
 
     try {
-      // Update task on backend with both column and status
+      // Update task on backend with column only
       await updateTaskAPI(projectId, boardId, sourceColumnId, taskId, {
-        column: destColumnId,
-        status: mappedStatus
+        columnId: destColumnId
       });
     } catch (error) {
       console.error('Failed to move task:', error);

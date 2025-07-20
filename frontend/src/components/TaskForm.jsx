@@ -26,7 +26,6 @@ const TaskForm = ({ task, onClose }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [status, setStatus] = useState("To Do");
   const [priority, setPriority] = useState("medium");
   const [columnId, setColumnId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +35,6 @@ const TaskForm = ({ task, onClose }) => {
       setTitle(task.title || "");
       setDescription(task.description || "");
       setDueDate(formatDateForInput(task.dueDate));
-      setStatus(task.status || "To Do");
       setPriority(task.priority || "medium");
       setColumnId(task.columnId || "");
     }
@@ -74,7 +72,6 @@ const TaskForm = ({ task, onClose }) => {
         title: title.trim(),
         description: description.trim(),
         dueDate: createDateFromInput(dueDate),
-        status,
         priority,
         timeSpent: task ? task.timeSpent : 0,
         isRunning: task ? task.isRunning : false,
@@ -86,15 +83,11 @@ const TaskForm = ({ task, onClose }) => {
       const targetColumnId = columnId || selectedBoard.columns[0]._id;
 
       if (task) {
-        const newColumn = selectedBoard.columns.find(
-          (c) => c.name.toLowerCase() === status.toLowerCase().replace("-", " ")
-        );
-        const newColumnId = newColumn ? newColumn._id : task.columnId;
+        const newColumnId = columnId || task.columnId;
         console.log("TaskForm: Updating task", {
           taskId: task._id,
           oldColumnId: task.columnId,
           newColumnId,
-          status,
           taskData,
         });
         // Update existing task
@@ -142,17 +135,21 @@ const TaskForm = ({ task, onClose }) => {
           />
         </FormGroup>
 
-        {!task && selectedBoard && selectedBoard.columns && (
+        {selectedBoard && selectedBoard.columns && (
           <FormGroup>
-            <Label htmlFor="column">Column</Label>
+            <Label htmlFor="column">Workflow Stage</Label>
             <Select
               id="column"
               value={columnId}
               onChange={(e) => setColumnId(e.target.value)}
+              required
             >
+              <option value="">Select Stage</option>
               {selectedBoard.columns.map((column) => (
                 <option key={column._id} value={column._id}>
-                  {column.name}
+                  {column.name.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ')}
                 </option>
               ))}
             </Select>
@@ -172,18 +169,6 @@ const TaskForm = ({ task, onClose }) => {
           </Select>
         </FormGroup>
 
-        <FormGroup>
-          <Label htmlFor="status">Status</Label>
-          <Select
-            id="status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="to-do">To Do</option>
-            <option value="in-progress">In Progress</option>
-            <option value="done">Done</option>
-          </Select>
-        </FormGroup>
 
         <FormGroup>
           <Label htmlFor="dueDate">Due Date</Label>
