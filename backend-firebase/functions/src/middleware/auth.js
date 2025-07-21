@@ -6,11 +6,6 @@ const { HttpsError } = require('firebase-functions/v2/https');
  * @returns {string} - User ID
  */
 function validateAuth(context) {
-  // Skip auth only in local emulator environment
-  if (process.env.FUNCTIONS_EMULATOR && process.env.NODE_ENV !== 'production') {
-    return 'test-user-id';
-  }
-  
   if (!context.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
   }

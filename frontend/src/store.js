@@ -12,6 +12,11 @@ import {
   createTask,
   updateTask as updateTaskAPI,
   deleteTask,
+  inviteUserToProjectAPI,
+  removeProjectMemberAPI,
+  getMyInvitationsAPI,
+  acceptProjectInvitationAPI,
+  getProjectMembersAPI,
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 
@@ -40,6 +45,11 @@ export const useStore = create((set, get) => ({
 
   // State for Tasks (within a board/column)
   tasks: [],
+
+  // Collaboration state
+  projectMembers: [], // Current project member details
+  invitations: [], // User's pending invitations
+  collaborationLoading: false,
 
   // UI State
   isSidebarOpen: JSON.parse(localStorage.getItem('taskflow-sidebar-open') ?? 'true'),
@@ -695,4 +705,97 @@ export const useStore = create((set, get) => ({
   openModal: (content = null) =>
     set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
+
+  // Collaboration Actions
+  inviteUserToProject: async (projectId, email, role = 'editor') => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      const result = await inviteUserToProjectAPI(projectId, email, role);
+      set({ collaborationLoading: false });
+      return result;
+    } catch (error) {
+      console.error('Store: Error inviting user:', error);
+      set({ error, collaborationLoading: false });
+      throw error;
+    }
+  },
+  
+  removeProjectMember: async (projectId, memberUserId) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      await removeProjectMemberAPI(projectId, memberUserId);
+      
+      // Update local state - remove member from current project
+      set((state) => ({
+        projects: state.projects.map(project => 
+          project._id === projectId 
+            ? { ...project, members: project.members.filter(id => id !== memberUserId) }
+            : project
+        ),
+        selectedProject: state.selectedProject?._id === projectId
+          ? { 
+              ...state.selectedProject, 
+              members: state.selectedProject.members.filter(id => id !== memberUserId)
+            }
+          : state.selectedProject,
+        projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
+        collaborationLoading: false
+      }));
+    } catch (error) {
+      console.error('Store: Error removing member:', error);
+      set({ error, collaborationLoading: false });
+      throw error;
+    }
+  },
+  
+  loadMyInvitations: async () => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      const invitations = await getMyInvitationsAPI();
+      set({ invitations, collaborationLoading: false });
+    } catch (error) {
+      console.error('Store: Error loading invitations:', error);
+      set({ error, collaborationLoading: false });
+    }
+  },
+  
+  acceptProjectInvitation: async (invitationId) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      const result = await acceptProjectInvitationAPI(invitationId);
+      
+      // Remove invitation from local state
+      set((state) => ({
+        invitations: state.invitations.filter(inv => inv.id !== invitationId),
+        collaborationLoading: false
+      }));
+      
+      // Reload projects to include the new project
+      await get().loadProjects();
+      
+      return result;
+    } catch (error) {
+      console.error('Store: Error accepting invitation:', error);
+      set({ error, collaborationLoading: false });
+      throw error;
+    }
+  },
+  
+  loadProjectMembers: async (projectId) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      // Get project to get member IDs
+      const project = get().projects.find(p => p._id === projectId) || get().selectedProject;
+      if (!project) {
+        throw new Error('Project not found');
+      }
+      
+      // Get member details from Firebase Auth (this would need a new backend function)
+      const members = await getProjectMembersAPI(project.members);
+      set({ projectMembers: members, collaborationLoading: false });
+    } catch (error) {
+      console.error('Store: Error loading project members:', error);
+      set({ error, collaborationLoading: false });
+    }
+  },
 }));

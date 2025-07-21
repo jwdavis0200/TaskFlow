@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
+import InvitationsPanel from './InvitationsPanel';
 import Modal from './common/Modal';
 import ProjectForm from './ProjectForm';
 import { HiMenuAlt2, HiOutlineLogout } from 'react-icons/hi';
@@ -295,6 +296,7 @@ const Sidebar = () => {
           </AddButton>
         </SidebarHeader>
         <SidebarContent>
+          <InvitationsPanel />
           <ProjectsList projects={projects} />
         </SidebarContent>
       </SidebarContainer>

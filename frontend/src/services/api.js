@@ -131,5 +131,62 @@ export const stopTimer = async (taskId, timeElapsed) => {
   return result.data;
 };
 
+// Collaboration API functions
+export const inviteUserToProjectAPI = async (projectId, email, role) => {
+  try {
+    const inviteUserToProject = httpsCallable(functions, 'inviteUserToProject');
+    const result = await inviteUserToProject({ projectId, email, role });
+    return result.data;
+  } catch (error) {
+    console.error('API Error inviting user:', error);
+    throw error;
+  }
+};
+
+export const removeProjectMemberAPI = async (projectId, memberUserId) => {
+  try {
+    const removeProjectMember = httpsCallable(functions, 'removeProjectMember');
+    const result = await removeProjectMember({ projectId, memberUserId });
+    return result.data;
+  } catch (error) {
+    console.error('API Error removing member:', error);
+    throw error;
+  }
+};
+
+export const getMyInvitationsAPI = async () => {
+  try {
+    const getMyInvitations = httpsCallable(functions, 'getMyInvitations');
+    const result = await getMyInvitations();
+    return result.data;
+  } catch (error) {
+    console.error('API Error getting invitations:', error);
+    throw error;
+  }
+};
+
+export const acceptProjectInvitationAPI = async (invitationId) => {
+  try {
+    const acceptProjectInvitation = httpsCallable(functions, 'acceptProjectInvitation');
+    const result = await acceptProjectInvitation({ invitationId });
+    return result.data;
+  } catch (error) {
+    console.error('API Error accepting invitation:', error);
+    throw error;
+  }
+};
+
+// Helper function to get member details (requires new backend function)
+export const getProjectMembersAPI = async (memberIds) => {
+  try {
+    const getProjectMembers = httpsCallable(functions, 'getProjectMembers');
+    const result = await getProjectMembers({ memberIds });
+    return result.data;
+  } catch (error) {
+    console.error('API Error getting members:', error);
+    throw error;
+  }
+};
+
 // Note: Push notifications will be handled through Firebase Cloud Messaging
 // when implemented in the migration

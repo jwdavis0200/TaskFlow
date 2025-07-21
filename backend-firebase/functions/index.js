@@ -15,6 +15,13 @@ exports.createProject = projects.createProject;
 exports.updateProject = projects.updateProject;
 exports.deleteProject = projects.deleteProject;
 
+// Export collaboration functions
+exports.inviteUserToProject = projects.inviteUserToProject;
+exports.acceptProjectInvitation = projects.acceptProjectInvitation;
+exports.removeProjectMember = projects.removeProjectMember;
+exports.getMyInvitations = projects.getMyInvitations;
+exports.getProjectMembers = projects.getProjectMembers;
+
 // Export boards functions
 exports.getBoards = boards.getBoards;
 exports.createBoard = boards.createBoard;

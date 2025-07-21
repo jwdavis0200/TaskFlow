@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
+import { FaUsers } from 'react-icons/fa';
 import { useStore } from '../store';
 import BoardsList from './BoardsList';
 import Modal from './common/Modal';
@@ -47,6 +48,21 @@ const ProjectName = styled.h3`
   &:hover {
     color: #3b82f6;
   }
+`;
+
+const ProjectInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`;
+
+const ProjectMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #666;
 `;
 
 const ProjectActions = styled.div`
@@ -144,9 +160,15 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeletePro
   return (
     <ProjectItem>
       <ProjectHeader>
-        <ProjectName onClick={handleProjectClick}>
-          📋 {project.name}
-        </ProjectName>
+        <ProjectInfo>
+          <ProjectName onClick={handleProjectClick}>
+            📋 {project.name}
+          </ProjectName>
+          <ProjectMeta>
+            <FaUsers size={12} />
+            {project.members?.length || 1} member{(project.members?.length || 1) !== 1 ? 's' : ''}
+          </ProjectMeta>
+        </ProjectInfo>
         <ProjectActions>
           <AddBoardButton onClick={handleAddBoard} title="Add Board">
             + Board
