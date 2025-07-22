@@ -17,6 +17,8 @@ import {
   getMyInvitationsAPI,
   acceptProjectInvitationAPI,
   getProjectMembersAPI,
+  changeUserRoleAPI,
+  removeProjectMemberSecureAPI,
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 
@@ -50,6 +52,10 @@ export const useStore = create((set, get) => ({
   projectMembers: [], // Current project member details
   invitations: [], // User's pending invitations
   collaborationLoading: false,
+  
+  // RBAC state
+  userRoles: {}, // Map of projectId -> user's role in that project
+  projectPermissions: {}, // Map of projectId -> user's permissions in that project
 
   // UI State
   isSidebarOpen: JSON.parse(localStorage.getItem('taskflow-sidebar-open') ?? 'true'),
@@ -138,7 +144,31 @@ export const useStore = create((set, get) => ({
         }))
       }));
       console.log("Store: Projects with boards mapped:", projectsWithBoards);
-      set({ projects: projectsWithBoards, loading: false });
+      const { user } = get();
+      if (user) {
+        const userRoles = {};
+        
+        projectsWithBoards.forEach(project => {
+          // Determine user role in project (UI purposes only)
+          let userRole = 'viewer'; // default
+          
+          if (project.owner === user.uid) {
+            userRole = 'owner';
+          } else if (project.memberRoles && project.memberRoles[user.uid]) {
+            userRole = project.memberRoles[user.uid];
+          }
+          
+          userRoles[project.id] = userRole;
+        });
+        
+        set({ 
+          projects: projectsWithBoards, 
+          userRoles,
+          loading: false 
+        });
+      } else {
+        set({ projects: projectsWithBoards, loading: false });
+      }
     } catch (error) {
       console.error("Store: Error fetching projects:", error);
       set({ error, loading: false });
@@ -706,6 +736,41 @@ export const useStore = create((set, get) => ({
     set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
 
+  // RBAC Helper Functions (UI optimization only - server enforces security)
+  getUserRole: (projectId) => {
+    const { userRoles } = get();
+    return userRoles[projectId] || 'viewer';
+  },
+
+  canInviteMembers: (projectId) => {
+    const role = get().getUserRole(projectId);
+    return role === 'owner' || role === 'admin';
+  },
+
+  canRemoveMembers: (projectId) => {
+    const role = get().getUserRole(projectId);
+    return role === 'owner' || role === 'admin';
+  },
+
+  canEditProject: (projectId) => {
+    const role = get().getUserRole(projectId);
+    return role === 'owner' || role === 'admin' || role === 'editor';
+  },
+
+  canManageBoards: (projectId) => {
+    const role = get().getUserRole(projectId);
+    return role === 'owner' || role === 'admin' || role === 'editor';
+  },
+
+  canEditTasks: (projectId) => {
+    const role = get().getUserRole(projectId);
+    return role === 'owner' || role === 'admin' || role === 'editor';
+  },
+
+  isProjectOwner: (projectId) => {
+    return get().getUserRole(projectId) === 'owner';
+  },
+
   // Collaboration Actions
   inviteUserToProject: async (projectId, email, role = 'editor') => {
     set({ collaborationLoading: true, error: null });
@@ -791,11 +856,89 @@ export const useStore = create((set, get) => ({
       }
       
       // Get member details from Firebase Auth (this would need a new backend function)
-      const members = await getProjectMembersAPI(project.members);
+      const members = await getProjectMembersAPI(projectId, project.members);
       set({ projectMembers: members, collaborationLoading: false });
     } catch (error) {
       console.error('Store: Error loading project members:', error);
       set({ error, collaborationLoading: false });
+    }
+  },
+
+  // RBAC Actions
+  changeUserRole: async (projectId, targetUserId, newRole) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      const result = await changeUserRoleAPI(projectId, targetUserId, newRole);
+      
+      // Update local state
+      set((state) => {
+        const updatedProjects = state.projects.map(project => {
+          if (project._id === projectId) {
+            const updatedMemberRoles = { ...project.memberRoles };
+            updatedMemberRoles[targetUserId] = newRole;
+            return { ...project, memberRoles: updatedMemberRoles };
+          }
+          return project;
+        });
+        
+        // Update userRoles for UI
+        const updatedUserRoles = { ...state.userRoles };
+        if (state.user && targetUserId === state.user.uid) {
+          updatedUserRoles[projectId] = newRole;
+        }
+        
+        return {
+          projects: updatedProjects,
+          userRoles: updatedUserRoles,
+          selectedProject: state.selectedProject?._id === projectId
+            ? updatedProjects.find(p => p._id === projectId)
+            : state.selectedProject,
+          collaborationLoading: false
+        };
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Store: Error changing user role:', error);
+      set({ error, collaborationLoading: false });
+      throw error;
+    }
+  },
+
+  removeProjectMemberSecure: async (projectId, memberUserId) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      await removeProjectMemberSecureAPI(projectId, memberUserId);
+      
+      // Update local state - remove member from project
+      set((state) => ({
+        projects: state.projects.map(project => 
+          project._id === projectId 
+            ? { 
+                ...project, 
+                members: project.members.filter(id => id !== memberUserId),
+                memberRoles: Object.fromEntries(
+                  Object.entries(project.memberRoles || {}).filter(([key]) => key !== memberUserId)
+                )
+              }
+            : project
+        ),
+        selectedProject: state.selectedProject?._id === projectId
+          ? { 
+              ...state.selectedProject, 
+              members: state.selectedProject.members.filter(id => id !== memberUserId),
+              memberRoles: Object.fromEntries(
+                Object.entries(state.selectedProject.memberRoles || {}).filter(([key]) => key !== memberUserId)
+              )
+            }
+          : state.selectedProject,
+        projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
+        collaborationLoading: false
+      }));
+    } catch (error) {
+      console.error('Store: Error removing member (secure):', error);
+      set({ error, collaborationLoading: false });
+      throw error;
     }
   },
 }));

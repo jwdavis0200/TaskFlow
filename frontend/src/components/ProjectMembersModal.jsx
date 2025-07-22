@@ -6,14 +6,13 @@ import Modal from './common/Modal';
 import InviteMemberForm from './InviteMemberForm';
 import ConfirmationModal from './common/ConfirmationModal';
 
-const ModalContent = styled.div`
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  background: white;
-  border-radius: 12px;
+const ModalContentInner = styled.div`
+  width: 100%;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 `;
 
 const Header = styled.div`
@@ -48,8 +47,26 @@ const CloseButton = styled.button`
 
 const Content = styled.div`
   padding: 24px 32px;
-  max-height: 60vh;
+  flex: 1;
   overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
 `;
 
 const MembersList = styled.div`
@@ -172,13 +189,21 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
     collaborationLoading, 
     loadProjectMembers, 
     inviteUserToProject,
-    removeProjectMember,
+    removeProjectMemberSecure,
+    changeUserRole,
+    canInviteMembers,
+    canRemoveMembers,
+    getUserRole,
+    isProjectOwner,
     user 
   } = useStore();
   
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [memberToChangeRole, setMemberToChangeRole] = useState(null);
+  const [newRole, setNewRole] = useState('');
+  const [isChangingRole, setIsChangingRole] = useState(false);
 
   useEffect(() => {
     if (isOpen && project) {
@@ -202,7 +227,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
     
     setIsRemoving(true);
     try {
-      await removeProjectMember(project._id, memberToRemove.uid);
+      await removeProjectMemberSecure(project._id, memberToRemove.uid);
       setMemberToRemove(null);
     } catch (error) {
       alert('Failed to remove member: ' + error.message);
@@ -211,7 +236,32 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
     }
   };
 
-  const isOwner = project?.owner === user?.uid;
+  const handleChangeRole = async () => {
+    if (!memberToChangeRole || !newRole) return;
+    
+    setIsChangingRole(true);
+    try {
+      await changeUserRole(project._id, memberToChangeRole.uid, newRole);
+      setMemberToChangeRole(null);
+      setNewRole('');
+      // Reload members to get updated role info
+      await loadProjectMembers(project._id);
+    } catch (error) {
+      alert('Failed to change role: ' + error.message);
+    } finally {
+      setIsChangingRole(false);
+    }
+  };
+
+  const getCurrentUserRole = () => getUserRole(project?._id);
+  const canInvite = canInviteMembers(project?._id);
+  const canRemove = canRemoveMembers(project?._id);
+  const isOwner = isProjectOwner(project?._id);
+
+  const getMemberRole = (member) => {
+    if (project?.owner === member.uid) return 'owner';
+    return project?.memberRoles?.[member.uid] || 'viewer';
+  };
   
   // Debug logging
   console.log('ProjectMembersModal Debug:', {
@@ -226,8 +276,8 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
+      <Modal isOpen={isOpen} onClose={onClose} wide>
+        <ModalContentInner>
           <Header>
             <Title>Project Members</Title>
             <CloseButton onClick={onClose}>
@@ -256,23 +306,54 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                           <MemberDetails>
                             <MemberEmail>{member.email}</MemberEmail>
                             <MemberRole>
-                              {member.uid === project.owner ? (
-                                <>
-                                  <FaCrown size={12} />
-                                  Owner
-                                </>
-                              ) : (
-                                <>
-                                  <FaUser size={12} />
-                                  Member
-                                </>
-                              )}
+                              {(() => {
+                                const role = getMemberRole(member);
+                                const roleConfig = {
+                                  owner: { icon: FaCrown, label: 'Owner', color: '#ffd700' },
+                                  admin: { icon: FaUser, label: 'Admin', color: '#007bff' },
+                                  editor: { icon: FaUser, label: 'Editor', color: '#28a745' },
+                                  viewer: { icon: FaUser, label: 'Viewer', color: '#6c757d' }
+                                };
+                                const config = roleConfig[role] || roleConfig.viewer;
+                                const IconComponent = config.icon;
+                                return (
+                                  <>
+                                    <IconComponent size={12} style={{ color: config.color }} />
+                                    {config.label}
+                                  </>
+                                );
+                              })()}
                             </MemberRole>
                           </MemberDetails>
                         </MemberInfo>
                         
-                        {isOwner && member.uid !== project.owner && (
+                        {canRemove && member.uid !== project.owner && member.uid !== user?.uid && (
                           <MemberActions>
+                            {/* Role change dropdown for owner/admin */}
+                            {(isOwner || (getCurrentUserRole() === 'admin' && getMemberRole(member) !== 'admin')) && (
+                              <select
+                                value={getMemberRole(member)}
+                                onChange={(e) => {
+                                  const selectedRole = e.target.value;
+                                  if (selectedRole !== getMemberRole(member)) {
+                                    setMemberToChangeRole(member);
+                                    setNewRole(selectedRole);
+                                  }
+                                }}
+                                style={{
+                                  marginRight: '8px',
+                                  padding: '4px 8px',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '4px',
+                                  fontSize: '12px'
+                                }}
+                              >
+                                <option value="viewer">Viewer</option>
+                                <option value="editor">Editor</option>
+                                {isOwner && <option value="admin">Admin</option>}
+                              </select>
+                            )}
+                            
                             <ActionButton 
                               className="danger"
                               onClick={() => setMemberToRemove(member)}
@@ -287,7 +368,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                   )}
                 </MembersList>
                 
-                {isOwner && (
+                {canInvite && (
                   <InviteSection>
                     <InviteHeader>
                       <InviteTitle>
@@ -326,7 +407,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
               </>
             )}
           </Content>
-        </ModalContent>
+        </ModalContentInner>
       </Modal>
       
       {memberToRemove && (
@@ -338,6 +419,21 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
           onConfirm={handleRemoveMember}
           onClose={() => setMemberToRemove(null)}
           isLoading={isRemoving}
+        />
+      )}
+      
+      {memberToChangeRole && (
+        <ConfirmationModal
+          isOpen={true}
+          title="Change Member Role"
+          message={`Change ${memberToChangeRole.email}'s role to ${newRole}?`}
+          warningText={`This will ${newRole === 'viewer' ? 'restrict' : 'modify'} their access permissions in this project.`}
+          onConfirm={handleChangeRole}
+          onClose={() => {
+            setMemberToChangeRole(null);
+            setNewRole('');
+          }}
+          isLoading={isChangingRole}
         />
       )}
     </>

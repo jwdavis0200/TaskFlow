@@ -177,13 +177,47 @@ export const acceptProjectInvitationAPI = async (invitationId) => {
 };
 
 // Helper function to get member details (requires new backend function)
-export const getProjectMembersAPI = async (memberIds) => {
+export const getProjectMembersAPI = async (projectId, memberIds) => {
   try {
     const getProjectMembers = httpsCallable(functions, 'getProjectMembers');
-    const result = await getProjectMembers({ memberIds });
+    const result = await getProjectMembers({ projectId, memberIds });
     return result.data;
   } catch (error) {
     console.error('API Error getting members:', error);
+    throw error;
+  }
+};
+
+// RBAC Functions
+export const changeUserRoleAPI = async (projectId, targetUserId, newRole) => {
+  try {
+    const changeUserRole = httpsCallable(functions, 'changeUserRole');
+    const result = await changeUserRole({ projectId, targetUserId, newRole });
+    return result.data;
+  } catch (error) {
+    console.error('API Error changing user role:', error);
+    throw error;
+  }
+};
+
+export const removeProjectMemberSecureAPI = async (projectId, memberUserId) => {
+  try {
+    const removeProjectMemberSecure = httpsCallable(functions, 'removeProjectMemberSecure');
+    const result = await removeProjectMemberSecure({ projectId, memberUserId });
+    return result.data;
+  } catch (error) {
+    console.error('API Error removing member (secure):', error);
+    throw error;
+  }
+};
+
+export const migrateProjectsToRBACAPI = async () => {
+  try {
+    const migrateProjectsToRBAC = httpsCallable(functions, 'migrateProjectsToRBAC');
+    const result = await migrateProjectsToRBAC();
+    return result.data;
+  } catch (error) {
+    console.error('API Error running RBAC migration:', error);
     throw error;
   }
 };

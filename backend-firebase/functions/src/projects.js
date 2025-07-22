@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { validateAuth, validateProjectAccess } = require('./middleware/auth');
+const { validateAuth, validateProjectAccess, validateProjectPermission, ROLES, PERMISSIONS, validateRole, hasPermission } = require('./middleware/auth');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 
 /**
@@ -165,7 +165,7 @@ exports.createProject = onCall(async (request) => {
 });
 
 /**
- * Update a project
+ * Update a project - RBAC enforced
  */
 exports.updateProject = onCall(async (request) => {
   const userId = validateAuth(request);
@@ -178,12 +178,19 @@ exports.updateProject = onCall(async (request) => {
   const db = admin.firestore();
   
   try {
-    // Validate project access
-    await validateProjectAccess(db, projectId, userId);
+    // Validate project access and permission to edit project
+    await validateProjectPermission(db, projectId, userId, PERMISSIONS.EDIT_PROJECT);
+    
+    // Sanitize updates - prevent modification of critical fields
+    const sanitizedUpdates = { ...updates };
+    delete sanitizedUpdates.owner;
+    delete sanitizedUpdates.members;
+    delete sanitizedUpdates.memberRoles;
+    delete sanitizedUpdates.createdAt;
     
     // Update project
     await db.collection('projects').doc(projectId).update({
-      ...updates,
+      ...sanitizedUpdates,
       updatedAt: FieldValue.serverTimestamp()
     });
     
@@ -246,7 +253,100 @@ exports.deleteProject = onCall(async (request) => {
   }
 });
 
-// Invite user to project
+/**
+ * MIGRATION FUNCTION: Add memberRoles to existing projects
+ * This function safely migrates existing projects to include the memberRoles field
+ * Should be called once during the RBAC rollout
+ */
+exports.migrateProjectsToRBAC = onCall(async (request) => {
+  const userId = validateAuth(request);
+  
+  // Only allow specific admin users to run migration
+  const MIGRATION_ADMIN_EMAILS = [
+    'admin@taskflow.com', // Replace with actual admin emails
+    request.auth.token.email // Allow current user for testing
+  ];
+  
+  if (!MIGRATION_ADMIN_EMAILS.includes(request.auth.token.email)) {
+    throw new HttpsError('permission-denied', 'Only admins can run migrations');
+  }
+  
+  const db = admin.firestore();
+  
+  try {
+    console.log('Starting RBAC migration...');
+    
+    // Get all projects
+    const projectsSnapshot = await db.collection('projects').get();
+    
+    let migratedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+    
+    // Process projects in batches to avoid memory issues
+    const batchSize = 50;
+    const projects = projectsSnapshot.docs;
+    
+    for (let i = 0; i < projects.length; i += batchSize) {
+      const batch = projects.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (projectDoc) => {
+        try {
+          const projectData = projectDoc.data();
+          
+          // Skip projects that already have memberRoles
+          if (projectData.memberRoles) {
+            skippedCount++;
+            return;
+          }
+          
+          // Create memberRoles for all members except owner
+          const memberRoles = {};
+          
+          if (projectData.members && Array.isArray(projectData.members)) {
+            projectData.members.forEach(memberId => {
+              // Don't add owner to memberRoles (they have special status)
+              if (memberId !== projectData.owner) {
+                memberRoles[memberId] = ROLES.EDITOR; // Default to editor role
+              }
+            });
+          }
+          
+          // Update project with memberRoles field
+          await db.collection('projects').doc(projectDoc.id).update({
+            memberRoles,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+          
+          migratedCount++;
+          console.log(`Migrated project ${projectDoc.id}: ${Object.keys(memberRoles).length} member roles added`);
+          
+        } catch (error) {
+          errorCount++;
+          console.error(`Error migrating project ${projectDoc.id}:`, error);
+        }
+      }));
+    }
+    
+    const result = {
+      success: true,
+      totalProjects: projects.length,
+      migratedCount,
+      skippedCount,
+      errorCount,
+      message: `Migration completed: ${migratedCount} projects migrated, ${skippedCount} skipped, ${errorCount} errors`
+    };
+    
+    console.log('Migration completed:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Migration failed:', error);
+    throw new HttpsError('internal', 'Migration failed: ' + error.message);
+  }
+});
+
+// Invite user to project - RBAC enforced
 exports.inviteUserToProject = onCall(async (request) => {
   const userId = validateAuth(request);
   const { projectId, email, role = 'editor' } = request.data;
@@ -255,14 +355,21 @@ exports.inviteUserToProject = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Project ID and email are required');
   }
   
+  // Validate role input
+  validateRole(role);
+  
   const db = admin.firestore();
   
   try {
-    // Validate project access and ownership
-    const projectData = await validateProjectAccess(db, projectId, userId);
+    // Validate project access and permission to invite members
+    const projectData = await validateProjectPermission(db, projectId, userId, PERMISSIONS.INVITE_MEMBERS);
     
-    if (projectData.owner !== userId) {
-      throw new HttpsError('permission-denied', 'Only project owner can invite members');
+    // Additional security: Only owner and admin can invite admins
+    const { getUserRole } = require('./middleware/auth');
+    const actorRole = getUserRole(projectData, userId);
+    
+    if (role === ROLES.ADMIN && actorRole !== ROLES.OWNER) {
+      throw new HttpsError('permission-denied', 'Only project owner can invite admins');
     }
     
     // Check if user already exists in Firebase Auth by email
@@ -364,11 +471,18 @@ exports.acceptProjectInvitation = onCall(async (request) => {
         throw new HttpsError('already-exists', 'User is already a member');
       }
       
-      // Add user to members array
-      transaction.update(projectRef, {
+      // Add user to members array and set their role in memberRoles
+      const updates = {
         members: FieldValue.arrayUnion(userId),
         updatedAt: FieldValue.serverTimestamp()
-      });
+      };
+      
+      // Add user role to memberRoles (don't add owner to memberRoles)
+      if (userId !== projectData.owner) {
+        updates[`memberRoles.${userId}`] = invitation.role || ROLES.EDITOR;
+      }
+      
+      transaction.update(projectRef, updates);
       
       // Update invitation status
       transaction.update(invitationDoc.ref, {
@@ -388,49 +502,6 @@ exports.acceptProjectInvitation = onCall(async (request) => {
   }
 });
 
-// Remove project member
-exports.removeProjectMember = onCall(async (request) => {
-  const userId = validateAuth(request);
-  const { projectId, memberUserId } = request.data;
-  
-  if (!projectId || !memberUserId) {
-    throw new HttpsError('invalid-argument', 'Project ID and member user ID are required');
-  }
-  
-  if (userId === memberUserId) {
-    throw new HttpsError('invalid-argument', 'Cannot remove yourself from project');
-  }
-  
-  const db = admin.firestore();
-  
-  try {
-    // Validate project access and ownership
-    const projectData = await validateProjectAccess(db, projectId, userId);
-    
-    if (projectData.owner !== userId) {
-      throw new HttpsError('permission-denied', 'Only project owner can remove members');
-    }
-    
-    // Check if user is actually a member
-    if (!projectData.members.includes(memberUserId)) {
-      throw new HttpsError('not-found', 'User is not a member of this project');
-    }
-    
-    // Remove user from members array
-    await db.collection('projects').doc(projectId).update({
-      members: FieldValue.arrayRemove(memberUserId),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error removing member:', error);
-    if (error instanceof HttpsError) {
-      throw error;
-    }
-    throw new HttpsError('internal', 'Failed to remove member');
-  }
-});
 
 // Get project invitations (for the invited user)
 exports.getMyInvitations = onCall(async (request) => {
@@ -471,16 +542,20 @@ exports.getMyInvitations = onCall(async (request) => {
   }
 });
 
-// Get project members details (for UI display)
+// Get project members details (for UI display) - RBAC enforced
 exports.getProjectMembers = onCall(async (request) => {
   const userId = validateAuth(request);
-  const { memberIds } = request.data;
+  const { projectId, memberIds } = request.data;
   
-  if (!memberIds || !Array.isArray(memberIds)) {
-    throw new HttpsError('invalid-argument', 'Member IDs array is required');
+  if (!projectId || !memberIds || !Array.isArray(memberIds)) {
+    throw new HttpsError('invalid-argument', 'Project ID and member IDs array are required');
   }
   
+  const db = admin.firestore();
+  
   try {
+    // Validate user has access to this project
+    await validateProjectAccess(db, projectId, userId);
     // Get user details from Firebase Auth
     const members = await Promise.all(
       memberIds.map(async (memberId) => {
@@ -506,5 +581,162 @@ exports.getProjectMembers = onCall(async (request) => {
   } catch (error) {
     console.error('Error getting project members:', error);
     throw new HttpsError('internal', 'Failed to get project members');
+  }
+});
+
+// Change user role in project
+exports.changeUserRole = onCall(async (request) => {
+  const userId = validateAuth(request);
+  const { projectId, targetUserId, newRole } = request.data;
+  
+  if (!projectId || !targetUserId || !newRole) {
+    throw new HttpsError('invalid-argument', 'Project ID, target user ID, and new role are required');
+  }
+  
+  // Validate role input
+  validateRole(newRole);
+  
+  if (userId === targetUserId) {
+    throw new HttpsError('invalid-argument', 'Cannot change your own role');
+  }
+  
+  const db = admin.firestore();
+  
+  try {
+    // Validate project access
+    const projectData = await validateProjectAccess(db, projectId, userId);
+    
+    // Check if actor has permission to manage roles
+    if (!hasPermission(projectData, userId, PERMISSIONS.REMOVE_MEMBERS)) {
+      throw new HttpsError('permission-denied', 'Insufficient permissions to change user roles');
+    }
+    
+    // Get actor and target roles
+    const { getUserRole, canModifyRole } = require('./middleware/auth');
+    const actorRole = getUserRole(projectData, userId);
+    const targetRole = getUserRole(projectData, targetUserId);
+    
+    if (!targetRole) {
+      throw new HttpsError('not-found', 'Target user is not a member of this project');
+    }
+    
+    // Validate role change permissions
+    if (!canModifyRole(actorRole, targetRole, newRole)) {
+      throw new HttpsError('permission-denied', 'Cannot change this user\'s role to the specified role');
+    }
+    
+    // Cannot change owner role
+    if (projectData.owner === targetUserId) {
+      throw new HttpsError('permission-denied', 'Cannot change owner role');
+    }
+    
+    // Update user role
+    await db.runTransaction(async (transaction) => {
+      const projectRef = db.collection('projects').doc(projectId);
+      
+      transaction.update(projectRef, {
+        [`memberRoles.${targetUserId}`]: newRole,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      
+      // Log the change for audit
+      const auditLogRef = db.collection('audit_logs').doc();
+      transaction.set(auditLogRef, {
+        action: 'role_changed',
+        projectId,
+        actorUserId: userId,
+        targetUserId,
+        oldRole: targetRole,
+        newRole,
+        timestamp: FieldValue.serverTimestamp()
+      });
+    });
+    
+    return { 
+      success: true, 
+      message: `User role changed from ${targetRole} to ${newRole}` 
+    };
+  } catch (error) {
+    console.error('Error changing user role:', error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError('internal', 'Failed to change user role');
+  }
+});
+
+// Enhanced remove project member (replaces original removeProjectMember)
+exports.removeProjectMemberSecure = onCall(async (request) => {
+  const userId = validateAuth(request);
+  const { projectId, memberUserId } = request.data;
+  
+  if (!projectId || !memberUserId) {
+    throw new HttpsError('invalid-argument', 'Project ID and member user ID are required');
+  }
+  
+  if (userId === memberUserId) {
+    throw new HttpsError('invalid-argument', 'Cannot remove yourself from project');
+  }
+  
+  const db = admin.firestore();
+  
+  try {
+    // Validate project access and permission
+    const projectData = await validateProjectAccess(db, projectId, userId);
+    
+    // Check if actor has permission to remove members
+    if (!hasPermission(projectData, userId, PERMISSIONS.REMOVE_MEMBERS)) {
+      throw new HttpsError('permission-denied', 'Insufficient permissions to remove members');
+    }
+    
+    // Cannot remove owner
+    if (projectData.owner === memberUserId) {
+      throw new HttpsError('permission-denied', 'Cannot remove project owner');
+    }
+    
+    // Check if user is actually a member
+    if (!projectData.members.includes(memberUserId)) {
+      throw new HttpsError('not-found', 'User is not a member of this project');
+    }
+    
+    // Get member role for audit log
+    const { getUserRole } = require('./middleware/auth');
+    const memberRole = getUserRole(projectData, memberUserId);
+    
+    // Remove user from project
+    await db.runTransaction(async (transaction) => {
+      const projectRef = db.collection('projects').doc(projectId);
+      
+      const updates = {
+        members: FieldValue.arrayRemove(memberUserId),
+        updatedAt: FieldValue.serverTimestamp()
+      };
+      
+      // Remove from memberRoles if present
+      if (projectData.memberRoles && projectData.memberRoles[memberUserId]) {
+        updates[`memberRoles.${memberUserId}`] = FieldValue.delete();
+      }
+      
+      transaction.update(projectRef, updates);
+      
+      // Log the removal for audit
+      const auditLogRef = db.collection('audit_logs').doc();
+      transaction.set(auditLogRef, {
+        action: 'member_removed',
+        projectId,
+        actorUserId: userId,
+        targetUserId: memberUserId,
+        removedRole: memberRole,
+        timestamp: FieldValue.serverTimestamp()
+      });
+    });
+    
+    return { success: true, message: 'Member removed successfully' };
+  } catch (error) {
+    console.error('Error removing member:', error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError('internal', 'Failed to remove member');
   }
 });

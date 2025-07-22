@@ -28,7 +28,7 @@ const ModalContent = styled.div`
   background: white;
   border-radius: 16px;
   padding: 0;
-  max-width: 480px;
+  max-width: ${props => props.wide ? '800px' : '480px'};
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
@@ -77,7 +77,7 @@ const ModalContent = styled.div`
   }
 `;
 
-const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true }) => {
+const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = false }) => {
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -88,7 +88,7 @@ const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true }) => {
 
   const modalContent = (
     <ModalOverlay onClick={handleOverlayClick}>
-      <ModalContent>
+      <ModalContent wide={wide}>
         {children}
       </ModalContent>
     </ModalOverlay>

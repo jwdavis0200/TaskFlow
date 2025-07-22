@@ -18,9 +18,15 @@ exports.deleteProject = projects.deleteProject;
 // Export collaboration functions
 exports.inviteUserToProject = projects.inviteUserToProject;
 exports.acceptProjectInvitation = projects.acceptProjectInvitation;
-exports.removeProjectMember = projects.removeProjectMember;
 exports.getMyInvitations = projects.getMyInvitations;
 exports.getProjectMembers = projects.getProjectMembers;
+
+// Export migration function
+exports.migrateProjectsToRBAC = projects.migrateProjectsToRBAC;
+
+// Export new RBAC functions
+exports.changeUserRole = projects.changeUserRole;
+exports.removeProjectMemberSecure = projects.removeProjectMemberSecure;
 
 // Export boards functions
 exports.getBoards = boards.getBoards;
