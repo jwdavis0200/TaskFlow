@@ -31,40 +31,50 @@ const InvitationItem = styled.div`
   border-radius: 6px;
   border: 1px solid #e0e0e0;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const InvitationInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const ProjectName = styled.span`
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
+  font-size: 0.95rem;
 `;
 
 const InviterInfo = styled.span`
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #666;
+  line-height: 1.3;
 `;
 
 const InvitationActions = styled.div`
   display: flex;
   gap: 8px;
+  justify-content: flex-start;
 `;
 
 const ActionButton = styled.button`
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
+  flex: 1;
+  justify-content: center;
   
   &.accept {
     background: #28a745;
