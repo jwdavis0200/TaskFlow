@@ -530,8 +530,9 @@ exports.getMyInvitations = onCall(async (request) => {
       invitationMap.set(doc.id, {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate?.(),
-        expiresAt: data.expiresAt?.toDate?.()
+        // Convert timestamps to ISO strings for consistent client-side handling
+        createdAt: (data.createdAt?.toDate?.() || new Date()).toISOString(),
+        expiresAt: (data.expiresAt?.toDate?.() || new Date(Date.now() + (7 * 24 * 60 * 60 * 1000))).toISOString()
       });
     });
     

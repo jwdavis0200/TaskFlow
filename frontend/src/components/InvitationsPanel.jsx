@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import styled from '@emotion/styled';
 import { FaEnvelope, FaCheck, FaTimes, FaClock } from 'react-icons/fa';
 import { useStore } from '../store';
+import { formatDateForDisplay } from '../utils/dateUtils';
 
 const PanelContainer = styled.div`
   padding: 16px;
@@ -149,10 +150,7 @@ const InvitationsPanel = () => {
               </InviterInfo>
               <InviterInfo>
                 <FaClock size={10} style={{ marginRight: 4 }} />
-                {invitation.createdAt ? 
-                  new Date(invitation.createdAt).toLocaleDateString() : 
-                  'Recently'
-                }
+                Invited {formatDateForDisplay(invitation.createdAt)}
               </InviterInfo>
             </InvitationInfo>
             
