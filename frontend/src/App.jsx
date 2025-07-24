@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Global, css } from "@emotion/react";
 import styled from "@emotion/styled";
 import KanbanBoard from "./components/KanbanBoard";
 import Sidebar from "./components/Sidebar";
+import MigrationBanner from "./components/MigrationBanner";
+import MigrationPanel from "./components/MigrationPanel";
 import { useStore } from "./store";
 
 const globalStyles = css`
@@ -78,12 +80,40 @@ const MobileOverlay = styled.div`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+const ModalContent = styled.div`
+  position: relative;
+  max-width: 1200px;
+  max-height: 90vh;
+  width: 100%;
+  overflow-y: auto;
+  border-radius: 8px;
+`;
+
 function App() {
   const { isSidebarOpen, toggleSidebar } = useStore();
+  const [showMigrationPanel, setShowMigrationPanel] = useState(false);
 
   return (
     <>
       <Global styles={globalStyles} />
+      
+      {/* Migration Banner - shows at top when needed */}
+      <MigrationBanner onOpenMigration={() => setShowMigrationPanel(true)} />
+      
       <AppContainer>
         <Sidebar />
         <MobileOverlay
@@ -95,6 +125,30 @@ function App() {
           <KanbanBoard />
         </MainContent>
       </AppContainer>
+
+      {/* Migration Panel Modal */}
+      {showMigrationPanel && (
+        <ModalOverlay onClick={() => setShowMigrationPanel(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <MigrationPanel />
+            <div style={{ textAlign: 'right', padding: '20px' }}>
+              <button 
+                onClick={() => setShowMigrationPanel(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#666',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </>
   );
 }

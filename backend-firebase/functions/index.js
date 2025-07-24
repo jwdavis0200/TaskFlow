@@ -8,6 +8,7 @@ const projects = require('./src/projects');
 const boards = require('./src/boards');
 const tasks = require('./src/tasks');
 const notifications = require('./src/notifications');
+const migration = require('./src/migration');
 
 // Export projects functions
 exports.getProjects = projects.getProjects;
@@ -22,8 +23,11 @@ exports.declineProjectInvitation = projects.declineProjectInvitation;
 exports.getMyInvitations = projects.getMyInvitations;
 exports.getProjectMembers = projects.getProjectMembers;
 
-// Export migration function
+// Export migration functions
 exports.migrateProjectsToRBAC = projects.migrateProjectsToRBAC;
+exports.migrateMyProjectsToRBAC = migration.migrateMyProjectsToRBAC;
+exports.getMyMigrationStatus = migration.getMyMigrationStatus;
+exports.checkMigrationNeeded = migration.checkMigrationNeeded;
 
 // Export new RBAC functions
 exports.changeUserRole = projects.changeUserRole;
