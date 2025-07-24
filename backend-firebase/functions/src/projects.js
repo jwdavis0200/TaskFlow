@@ -263,7 +263,6 @@ exports.migrateProjectsToRBAC = onCall(async (request) => {
   
   // Only allow specific admin users to run migration
   const MIGRATION_ADMIN_EMAILS = [
-    'admin@taskflow.com', // Replace with actual admin emails
     request.auth.token.email // Allow current user for testing
   ];
   
@@ -276,8 +275,31 @@ exports.migrateProjectsToRBAC = onCall(async (request) => {
   try {
     console.log('Starting RBAC migration...');
     
-    // Get all projects
-    const projectsSnapshot = await db.collection('projects').get();
+    // Get only projects where user is owner or member
+    const ownerProjectsSnapshot = await db.collection('projects')
+      .where('owner', '==', userId)
+      .get();
+    
+    const memberProjectsSnapshot = await db.collection('projects')
+      .where('members', 'array-contains', userId)
+      .get();
+    
+    // Combine and deduplicate results
+    const projectMap = new Map();
+    
+    // Add owner projects
+    ownerProjectsSnapshot.docs.forEach(doc => {
+      projectMap.set(doc.id, doc);
+    });
+    
+    // Add member projects (avoid duplicates)
+    memberProjectsSnapshot.docs.forEach(doc => {
+      if (!projectMap.has(doc.id)) {
+        projectMap.set(doc.id, doc);
+      }
+    });
+    
+    const projectsSnapshot = { docs: Array.from(projectMap.values()) };
     
     let migratedCount = 0;
     let skippedCount = 0;
