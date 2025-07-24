@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import styled from "@emotion/styled";
 import Timer from "./Timer";
+import ConfirmationModal from "./common/ConfirmationModal";
 import { useStore } from "../store";
 import { formatDateForDisplay } from "../utils/dateUtils";
 
@@ -162,6 +163,10 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
     }),
   });
 
+  // State for delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const updateTask = useStore((state) => state.updateTask);
   const deleteTask = useStore((state) => state.deleteTask);
   const canEditTasks = useStore((state) => state.canEditTasks);
@@ -184,16 +189,28 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
     });
   };
 
-  // Handler for deleting the task
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteTask(projectId, boardId, columnId, task._id);
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        alert('Failed to delete task. Please try again.');
-      }
+  // Handler for opening delete confirmation modal
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  // Handler for confirming task deletion
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteTask(projectId, boardId, columnId, task._id);
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  // Handler for cancelling delete
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
   };
 
 
@@ -222,7 +239,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
               Edit
             </button>
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               style={{
                 background: "none",
                 border: "none",
@@ -260,6 +277,18 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
           onTimerComplete={handleTimerComplete}
         />
       </TimerContainer>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${task.title}"?`}
+        warningText="This action cannot be undone. The task and all its data will be permanently removed."
+        confirmText="Delete Task"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </CardContainer>
   );
 };
