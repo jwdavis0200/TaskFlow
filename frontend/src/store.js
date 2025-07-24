@@ -755,8 +755,8 @@ export const useStore = create((set, get) => ({
 
   canEditProject: (projectId) => {
     const role = get().getUserRole(projectId);
-    return role === 'owner' || role === 'admin' || role === 'editor';
-  },
+    return role === 'owner' || role === 'admin';
+  },,
 
   canManageBoards: (projectId) => {
     const role = get().getUserRole(projectId);
