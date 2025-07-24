@@ -502,6 +502,62 @@ exports.acceptProjectInvitation = onCall(async (request) => {
   }
 });
 
+// Decline project invitation
+exports.declineProjectInvitation = onCall(async (request) => {
+  const userId = validateAuth(request);
+  const { invitationId } = request.data;
+  
+  if (!invitationId) {
+    throw new HttpsError('invalid-argument', 'Invitation ID is required');
+  }
+  
+  const db = admin.firestore();
+  
+  try {
+    const invitationDoc = await db.collection('invitations').doc(invitationId).get();
+    
+    if (!invitationDoc.exists) {
+      throw new HttpsError('not-found', 'Invitation not found');
+    }
+    
+    const invitation = invitationDoc.data();
+    
+    // Validate invitation
+    if (invitation.status !== 'pending') {
+      throw new HttpsError('invalid-argument', 'Invitation already processed');
+    }
+    
+    if (invitation.inviteeUserId && invitation.inviteeUserId !== userId) {
+      throw new HttpsError('permission-denied', 'Invitation not for this user');
+    }
+    
+    if (!invitation.inviteeUserId && invitation.inviteeEmail !== request.auth.token.email) {
+      throw new HttpsError('permission-denied', 'Invitation not for this email');
+    }
+    
+    // Check if invitation expired
+    const now = new Date();
+    const expiresAt = invitation.expiresAt.toDate ? invitation.expiresAt.toDate() : new Date(invitation.expiresAt);
+    if (now > expiresAt) {
+      throw new HttpsError('deadline-exceeded', 'Invitation has expired');
+    }
+    
+    // Update invitation status to declined
+    await invitationDoc.ref.update({
+      status: 'declined',
+      declinedAt: FieldValue.serverTimestamp(),
+      inviteeUserId: userId
+    });
+    
+    return { success: true, message: 'Invitation declined successfully' };
+  } catch (error) {
+    console.error('Error declining invitation:', error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError('internal', 'Failed to decline invitation');
+  }
+});
 
 // Get project invitations (for the invited user)
 exports.getMyInvitations = onCall(async (request) => {

@@ -204,6 +204,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
   const [memberToChangeRole, setMemberToChangeRole] = useState(null);
   const [newRole, setNewRole] = useState('');
   const [isChangingRole, setIsChangingRole] = useState(false);
+  const [invitationToSend, setInvitationToSend] = useState(null);
 
   useEffect(() => {
     if (isOpen && project) {
@@ -212,13 +213,18 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
   }, [isOpen, project, loadProjectMembers]);
 
   const handleInviteMember = async (email, role) => {
+    setInvitationToSend({ email, role });
+  };
+
+  const handleInviteMemberConfirm = async () => {
+    if (!invitationToSend) return;
+    
     try {
-      await inviteUserToProject(project._id, email, role);
+      await inviteUserToProject(project._id, invitationToSend.email, invitationToSend.role);
       setShowInviteForm(false);
-      // Show success message
-      alert('Invitation sent successfully!');
+      setInvitationToSend(null);
     } catch (error) {
-      alert('Failed to send invitation: ' + error.message);
+      console.error('Failed to send invitation:', error);
     }
   };
 
@@ -230,7 +236,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
       await removeProjectMemberSecure(project._id, memberToRemove.uid);
       setMemberToRemove(null);
     } catch (error) {
-      alert('Failed to remove member: ' + error.message);
+      console.error('Failed to remove member:', error);
     } finally {
       setIsRemoving(false);
     }
@@ -247,7 +253,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
       // Reload members to get updated role info
       await loadProjectMembers(project._id);
     } catch (error) {
-      alert('Failed to change role: ' + error.message);
+      console.error('Failed to change role:', error);
     } finally {
       setIsChangingRole(false);
     }
@@ -434,6 +440,19 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
             setNewRole('');
           }}
           isLoading={isChangingRole}
+        />
+      )}
+      
+      {invitationToSend && (
+        <ConfirmationModal
+          isOpen={true}
+          title="Send Project Invitation"
+          message={`Send an invitation to ${invitationToSend.email} to join "${project?.name}" as ${invitationToSend.role}?`}
+          confirmText="Send Invitation"
+          cancelText="Cancel"
+          onConfirm={handleInviteMemberConfirm}
+          onClose={() => setInvitationToSend(null)}
+          confirmButtonStyle="primary"
         />
       )}
     </>

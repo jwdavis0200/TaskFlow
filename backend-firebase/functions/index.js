@@ -18,6 +18,7 @@ exports.deleteProject = projects.deleteProject;
 // Export collaboration functions
 exports.inviteUserToProject = projects.inviteUserToProject;
 exports.acceptProjectInvitation = projects.acceptProjectInvitation;
+exports.declineProjectInvitation = projects.declineProjectInvitation;
 exports.getMyInvitations = projects.getMyInvitations;
 exports.getProjectMembers = projects.getProjectMembers;
 

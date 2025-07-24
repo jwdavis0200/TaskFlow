@@ -16,6 +16,7 @@ import {
   removeProjectMemberAPI,
   getMyInvitationsAPI,
   acceptProjectInvitationAPI,
+  declineProjectInvitationAPI,
   getProjectMembersAPI,
   changeUserRoleAPI,
   removeProjectMemberSecureAPI,
@@ -841,6 +842,26 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('Store: Error accepting invitation:', error);
+      set({ error, collaborationLoading: false });
+      throw error;
+    }
+  },
+
+  
+  declineProjectInvitation: async (invitationId) => {
+    set({ collaborationLoading: true, error: null });
+    try {
+      const result = await declineProjectInvitationAPI(invitationId);
+      
+      // Remove invitation from local state
+      set((state) => ({
+        invitations: state.invitations.filter(inv => inv.id !== invitationId),
+        collaborationLoading: false
+      }));
+      
+      return result;
+    } catch (error) {
+      console.error('Store: Error declining invitation:', error);
       set({ error, collaborationLoading: false });
       throw error;
     }

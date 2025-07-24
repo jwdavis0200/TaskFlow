@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { FaEnvelope, FaCheck, FaTimes, FaClock } from 'react-icons/fa';
 import { useStore } from '../store';
 import { formatDateForDisplay } from '../utils/dateUtils';
+import ConfirmationModal from './common/ConfirmationModal';
 
 const PanelContainer = styled.div`
   padding: 16px;
@@ -108,25 +109,37 @@ const InvitationsPanel = () => {
     invitations, 
     collaborationLoading, 
     loadMyInvitations, 
-    acceptProjectInvitation 
+    acceptProjectInvitation,
+    declineProjectInvitation 
   } = useStore();
+
+  const [invitationToAccept, setInvitationToAccept] = useState(null);
+  const [invitationToDecline, setInvitationToDecline] = useState(null);
 
   useEffect(() => {
     loadMyInvitations();
   }, [loadMyInvitations]);
 
-  const handleAccept = async (invitationId) => {
+  const handleAcceptConfirm = async () => {
+    if (!invitationToAccept) return;
+    
     try {
-      await acceptProjectInvitation(invitationId);
-      alert('Invitation accepted! Project added to your list.');
+      await acceptProjectInvitation(invitationToAccept.id);
+      setInvitationToAccept(null);
     } catch (error) {
-      alert('Failed to accept invitation: ' + error.message);
+      console.error('Failed to accept invitation:', error);
     }
   };
 
-  const handleDecline = async (invitationId) => {
-    // TODO: Implement decline invitation
-    alert('Decline functionality coming soon');
+  const handleDeclineConfirm = async () => {
+    if (!invitationToDecline) return;
+    
+    try {
+      await declineProjectInvitation(invitationToDecline.id);
+      setInvitationToDecline(null);
+    } catch (error) {
+      console.error('Failed to decline invitation:', error);
+    }
   };
 
   if (invitations.length === 0) {
@@ -157,7 +170,7 @@ const InvitationsPanel = () => {
             <InvitationActions>
               <ActionButton 
                 className="accept"
-                onClick={() => handleAccept(invitation.id)}
+                onClick={() => setInvitationToAccept(invitation)}
                 disabled={collaborationLoading}
               >
                 <FaCheck size={12} />
@@ -165,7 +178,7 @@ const InvitationsPanel = () => {
               </ActionButton>
               <ActionButton 
                 className="decline"
-                onClick={() => handleDecline(invitation.id)}
+                onClick={() => setInvitationToDecline(invitation)}
                 disabled={collaborationLoading}
               >
                 <FaTimes size={12} />
@@ -175,6 +188,34 @@ const InvitationsPanel = () => {
           </InvitationItem>
         ))}
       </InvitationsList>
+      
+      {/* Accept Confirmation Modal */}
+      {invitationToAccept && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setInvitationToAccept(null)}
+          onConfirm={handleAcceptConfirm}
+          title="Accept Project Invitation"
+          message={`Are you sure you want to accept the invitation to join "${invitationToAccept.projectName}"?`}
+          confirmText="Accept"
+          cancelText="Cancel"
+          confirmButtonStyle="primary"
+        />
+      )}
+      
+      {/* Decline Confirmation Modal */}
+      {invitationToDecline && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setInvitationToDecline(null)}
+          onConfirm={handleDeclineConfirm}
+          title="Decline Project Invitation"
+          message={`Are you sure you want to decline the invitation to join "${invitationToDecline.projectName}"?`}
+          confirmText="Decline"
+          cancelText="Cancel"
+          confirmButtonStyle="danger"
+        />
+      )}
     </PanelContainer>
   );
 };

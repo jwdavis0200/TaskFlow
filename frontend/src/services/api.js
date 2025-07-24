@@ -175,6 +175,16 @@ export const acceptProjectInvitationAPI = async (invitationId) => {
     throw error;
   }
 };
+export const declineProjectInvitationAPI = async (invitationId) => {
+  try {
+    const declineProjectInvitation = httpsCallable(functions, 'declineProjectInvitation');
+    const result = await declineProjectInvitation({ invitationId });
+    return result.data;
+  } catch (error) {
+    console.error('API Error declining invitation:', error);
+    throw error;
+  }
+};
 
 // Helper function to get member details (requires new backend function)
 export const getProjectMembersAPI = async (projectId, memberIds) => {
