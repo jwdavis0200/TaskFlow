@@ -111,11 +111,14 @@ const EmptyState = styled.div`
 
 const Column = ({ column, onEdit, projectId, boardId }) => {
   const moveTask = useStore((state) => state.moveTask);
+  const canEditTasks = useStore((state) => state.canEditTasks);
 
   const [{ isOver }, drop] = useDrop({
     accept: "task",
     drop: (item) => {
-      moveTask(item.id, column._id, projectId, boardId);
+      if (canEditTasks(projectId)) {
+        moveTask(item.id, column._id, projectId, boardId);
+      }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
