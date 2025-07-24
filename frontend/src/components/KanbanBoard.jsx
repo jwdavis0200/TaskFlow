@@ -127,6 +127,7 @@ const KanbanBoard = () => {
     loadBoards,
     setSelectedBoard,
     setSelectedProject,
+    canEditTasks,
   } = useStore();
   
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -260,9 +261,11 @@ const KanbanBoard = () => {
       <BoardContainer>
         <Header>
           <Title>{selectedProject?.name || "Project"} - {selectedBoard.name || "Kanban Board"}</Title>
-          <AddTaskButton onClick={() => handleOpenTaskForm()}>
-            + Add New Task
-          </AddTaskButton>
+          {canEditTasks(selectedProject?._id) && (
+            <AddTaskButton onClick={() => handleOpenTaskForm()}>
+              + Add New Task
+            </AddTaskButton>
+          )}
         </Header>
         <ColumnsContainer>
           {selectedBoard.columns.map((column) => (

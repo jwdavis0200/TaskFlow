@@ -134,7 +134,10 @@ const EmptyState = styled.div`
 const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeleteProject }) => {
   const {
     setSelectedProject,
-    loadBoards
+    loadBoards,
+    canManageBoards,
+    canEditProject,
+    isProjectOwner
   } = useStore();
   
   const handleProjectClick = () => {
@@ -170,15 +173,21 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeletePro
           </ProjectMeta>
         </ProjectInfo>
         <ProjectActions>
-          <AddBoardButton onClick={handleAddBoard} title="Add Board">
-            + Board
-          </AddBoardButton>
-          <EditButton onClick={handleEditProject} title="Edit Project">
-            ✏️
-          </EditButton>
-          <DeleteButton onClick={handleDeleteProject} title="Delete Project">
-            🗑️
-          </DeleteButton>
+          {canManageBoards(project._id) && (
+            <AddBoardButton onClick={handleAddBoard} title="Add Board">
+              + Board
+            </AddBoardButton>
+          )}
+          {canEditProject(project._id) && (
+            <EditButton onClick={handleEditProject} title="Edit Project">
+              ✏️
+            </EditButton>
+          )}
+          {isProjectOwner(project._id) && (
+            <DeleteButton onClick={handleDeleteProject} title="Delete Project">
+              🗑️
+            </DeleteButton>
+          )}
         </ProjectActions>
       </ProjectHeader>
       <ProjectContent>

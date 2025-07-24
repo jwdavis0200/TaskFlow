@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { validateAuth, validateProjectAccess } = require('./middleware/auth');
+const { validateAuth, validateProjectAccess, validateProjectPermission, PERMISSIONS } = require('./middleware/auth');
 const { FieldValue } = require('firebase-admin/firestore');
 
 /**
@@ -83,14 +83,14 @@ exports.createBoard = onCall(async (request) => {
   const { projectId, name } = request.data;
   
   if (!projectId || !name) {
-    throw new HttpsError('invalid-argument', 'Project ID and board name are required');
+    throw new HttpsError('invalid-argument', 'Project ID and name are required');
   }
   
   const db = admin.firestore();
   
   try {
-    // Validate user has access to project
-    await validateProjectAccess(db, projectId, userId);
+    // Validate user has permission to manage boards
+    await validateProjectPermission(db, projectId, userId, PERMISSIONS.MANAGE_BOARDS);
     
     // Create board + default columns atomically
     const result = await db.runTransaction(async (transaction) => {
@@ -166,7 +166,7 @@ exports.updateBoard = onCall(async (request) => {
     }
     
     const boardData = boardDoc.data();
-    await validateProjectAccess(db, boardData.projectId, userId);
+    await validateProjectPermission(db, boardData.projectId, userId, PERMISSIONS.MANAGE_BOARDS);
     
     // Update board
     await db.collection('boards').doc(boardId).update({
@@ -205,7 +205,7 @@ exports.deleteBoard = onCall(async (request) => {
     }
     
     const boardData = boardDoc.data();
-    await validateProjectAccess(db, boardData.projectId, userId);
+    await validateProjectPermission(db, boardData.projectId, userId, PERMISSIONS.MANAGE_BOARDS);
     
     // Cascade delete: board → columns → tasks
     await db.runTransaction(async (transaction) => {

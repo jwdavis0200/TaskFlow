@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { validateAuth, validateProjectAccess } = require('./middleware/auth');
+const { validateAuth, validateProjectAccess, validateProjectPermission, PERMISSIONS } = require('./middleware/auth');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 
 /**
@@ -66,8 +66,8 @@ exports.createTask = onCall(async (request) => {
   const db = admin.firestore();
   
   try {
-    // Validate user has access to project
-    await validateProjectAccess(db, projectId, userId);
+    // Validate user has permission to edit tasks
+    await validateProjectPermission(db, projectId, userId, PERMISSIONS.EDIT_TASKS);
     
     const taskRef = db.collection('tasks').doc();
     
@@ -147,9 +147,9 @@ exports.updateTask = onCall(async (request) => {
       throw new HttpsError('not-found', 'Task not found');
     }
     
-    // Validate user has access to project
+    // Validate user has permission to edit tasks
     const taskData = taskDoc.data();
-    await validateProjectAccess(db, taskData.projectId, userId);
+    await validateProjectPermission(db, taskData.projectId, userId, PERMISSIONS.EDIT_TASKS);
     
     // Prepare update data with proper timestamp handling
     const updateData = { ...updates };
@@ -236,8 +236,8 @@ exports.deleteTask = onCall(async (request) => {
     
     const taskData = taskDoc.data();
     
-    // Validate user has access to project
-    await validateProjectAccess(db, taskData.projectId, userId);
+    // Validate user has permission to edit tasks
+    await validateProjectPermission(db, taskData.projectId, userId, PERMISSIONS.EDIT_TASKS);
     
     await db.runTransaction(async (transaction) => {
       // Remove task from column's tasks array
@@ -282,7 +282,7 @@ exports.startTimer = onCall(async (request) => {
     }
     
     const taskData = taskDoc.data();
-    await validateProjectAccess(db, taskData.projectId, userId);
+    await validateProjectPermission(db, taskData.projectId, userId, PERMISSIONS.EDIT_TASKS);
     
     await taskRef.update({
       isRunning: true,
@@ -322,7 +322,7 @@ exports.stopTimer = onCall(async (request) => {
     }
     
     const taskData = taskDoc.data();
-    await validateProjectAccess(db, taskData.projectId, userId);
+    await validateProjectPermission(db, taskData.projectId, userId, PERMISSIONS.EDIT_TASKS);
     
     const currentTimeSpent = taskData.timeSpent || 0;
     

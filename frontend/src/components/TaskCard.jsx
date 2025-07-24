@@ -164,6 +164,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
 
   const updateTask = useStore((state) => state.updateTask);
   const deleteTask = useStore((state) => state.deleteTask);
+  const canEditTasks = useStore((state) => state.canEditTasks);
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {
@@ -206,32 +207,34 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
         }}
       >
         <TaskTitle>{task.title}</TaskTitle>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            onClick={() => onEdit({ ...task, columnId })}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              color: "#667eea",
-            }}
-          >
-            Edit
-          </button>
-          <button
-            onClick={handleDelete}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              color: "#dc3545",
-            }}
-          >
-            Delete
-          </button>
-        </div>
+        {canEditTasks(projectId) && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => onEdit({ ...task, columnId })}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                color: "#667eea",
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                color: "#dc3545",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       {task.description && (
