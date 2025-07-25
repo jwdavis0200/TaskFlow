@@ -7,6 +7,7 @@ import Modal from './common/Modal';
 import ConfirmationModal from './common/ConfirmationModal';
 import BoardForm from './BoardForm';
 import ProjectForm from './ProjectForm';
+import LoadingSpinner from './common/LoadingSpinner';
 
 const ProjectsContainer = styled.div`
   display: flex;
@@ -131,6 +132,20 @@ const EmptyState = styled.div`
   border: 2px dashed #e2e8f0;
 `;
 
+const LoadingState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 14px;
+  gap: 12px;
+`;
+
 const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeleteProject }) => {
   const {
     setSelectedProject,
@@ -197,7 +212,7 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeletePro
   );
 };
 
-const ProjectsList = ({ projects }) => {
+const ProjectsList = ({ projects, loading }) => {
   const deleteProject = useStore((state) => state.deleteProject);
   
   const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
@@ -252,6 +267,17 @@ const ProjectsList = ({ projects }) => {
     }
   };
 
+  // Show loading state while fetching projects
+  if (loading && (!projects || projects.length === 0)) {
+    return (
+      <LoadingState>
+        <LoadingSpinner />
+        Loading projects...
+      </LoadingState>
+    );
+  }
+
+  // Show empty state when not loading and no projects exist
   if (!projects || projects.length === 0) {
     return (
       <EmptyState>

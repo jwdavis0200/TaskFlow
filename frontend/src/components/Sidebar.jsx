@@ -153,40 +153,6 @@ const SidebarContent = styled.div`
   overflow-y: auto;
 `;
 
-const SidebarFooter = styled.div`
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-  margin-top: auto;
-`;
-
-const LogoutButton = styled.button`
-  width: 100%;
-  padding: 12px 16px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:hover {
-    background: #dc2626;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-
-
 const TitleIcon = styled.span`
   font-size: 24px;
 `;
@@ -220,8 +186,8 @@ const AddButton = styled.button`
 `;
 
 const Sidebar = () => {
-  const { projects, addProject, isSidebarOpen, toggleSidebar, user, signOut } = useStore();
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const { projects, isSidebarOpen, toggleSidebar, signOut, loading } = useStore();
+
   
   const handleLogout = async () => {
     try {
@@ -297,7 +263,7 @@ const Sidebar = () => {
         </SidebarHeader>
         <SidebarContent>
           <InvitationsPanel />
-          <ProjectsList projects={projects} />
+          <ProjectsList projects={projects} loading={loading} />
         </SidebarContent>
       </SidebarContainer>
       

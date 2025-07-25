@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import Column from "./Column";
 import TaskForm from "./TaskForm";
 import Modal from "./common/Modal";
+import LoadingSpinner from "./common/LoadingSpinner";
 import { useStore } from "../store";
 
 // Styled Components
@@ -123,6 +124,7 @@ const KanbanBoard = () => {
     selectedBoard,
     projects,
     selectedProject,
+    loading,
     loadProjects,
     loadBoards,
     setSelectedBoard,
@@ -241,9 +243,24 @@ const KanbanBoard = () => {
     setSelectedTask(null);
   };
 
-  // Show loading state while actually loading
+  // Show loading state for initial project fetch
+  if (loading && projects.length === 0) {
+    return (
+      <LoadingContainer>
+        <LoadingSpinner />
+        Loading projects...
+      </LoadingContainer>
+    );
+  }
+
+  // Show loading state while loading boards
   if (isLoadingBoards || !hasLoadedBoards) {
-    return <LoadingContainer>Loading boards...</LoadingContainer>;
+    return (
+      <LoadingContainer>
+        <LoadingSpinner />
+        Loading boards...
+      </LoadingContainer>
+    );
   }
 
   // Show empty state if no boards exist for the project
@@ -260,7 +277,12 @@ const KanbanBoard = () => {
 
   // Show loading if boards exist but none selected yet or columns not loaded
   if (!selectedBoard || !Array.isArray(selectedBoard.columns)) {
-    return <LoadingContainer>Loading boards...</LoadingContainer>;
+    return (
+      <LoadingContainer>
+        <LoadingSpinner />
+        Loading boards...
+      </LoadingContainer>
+    );
   }
 
   return (
