@@ -199,7 +199,7 @@ const InvitationsPanel = () => {
           message={`Are you sure you want to accept the invitation to join "${invitationToAccept.projectName}"?`}
           confirmText="Accept"
           cancelText="Cancel"
-          confirmButtonStyle="primary"
+          modalType="success"
         />
       )}
       
@@ -213,7 +213,7 @@ const InvitationsPanel = () => {
           message={`Are you sure you want to decline the invitation to join "${invitationToDecline.projectName}"?`}
           confirmText="Decline"
           cancelText="Cancel"
-          confirmButtonStyle="danger"
+          modalType="danger"
         />
       )}
     </PanelContainer>

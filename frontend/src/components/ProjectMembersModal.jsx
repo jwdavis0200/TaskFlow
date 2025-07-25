@@ -476,7 +476,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
           cancelText="Cancel"
           onConfirm={handleInviteMemberConfirm}
           onClose={() => setInvitationToSend(null)}
-          confirmButtonStyle="primary"
+          modalType="default"
         />
       )}
     </>
