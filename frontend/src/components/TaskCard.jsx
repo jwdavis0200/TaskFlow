@@ -159,6 +159,12 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
     type: "task",
     item: { id: task._id },
     canDrag: () => canEditTasks(projectId),
+    begin: () => {
+      setDragInProgress(true);
+    },
+    end: () => {
+      setDragInProgress(false);
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -171,6 +177,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   const updateTask = useStore((state) => state.updateTask);
   const deleteTask = useStore((state) => state.deleteTask);
   const canEditTasks = useStore((state) => state.canEditTasks);
+  const setDragInProgress = useStore((state) => state.setDragInProgress);
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {

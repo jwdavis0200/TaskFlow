@@ -62,6 +62,9 @@ export const useStore = create((set, get) => ({
   isSidebarOpen: JSON.parse(localStorage.getItem('taskflow-sidebar-open') ?? 'true'),
   isModalOpen: false,
   modalContent: null, // e.g., 'addProject', 'addTask', 'editBoard'
+  
+  // Drag & Drop State
+  isDragInProgress: false,
 
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
@@ -238,6 +241,11 @@ export const useStore = create((set, get) => ({
 
   // Board Actions
   loadBoards: async (projectId) => {
+    const { isDragInProgress } = get();
+    if (isDragInProgress) {
+      console.log('Store: Skipping loadBoards during drag operation');
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const boards = await fetchBoards(projectId);
@@ -332,6 +340,12 @@ export const useStore = create((set, get) => ({
     }
   },
   setSelectedBoard: (board) => {
+    const { isDragInProgress } = get();
+    if (isDragInProgress) {
+      console.log('Store: Skipping setSelectedBoard during drag operation');
+      return;
+    }
+    
     console.log("Store: Setting selected board and clearing tasks:", board?.name);
     
     // Validate board has required properties
@@ -602,6 +616,9 @@ export const useStore = create((set, get) => ({
   },
   moveTask: async (taskId, destColumnId, projectId, boardId) => {
     const state = get();
+    
+    // Set drag in progress to prevent other state operations
+    set({ isDragInProgress: true });
     let taskToMove = null;
     let sourceColumnId = null;
 
@@ -632,6 +649,14 @@ export const useStore = create((set, get) => ({
 
     if (!taskToMove) {
       console.error('Task not found for moveTask:', { taskId, boardId, availableBoards: state.boards.map(b => b._id) });
+      set({ isDragInProgress: false });
+      return;
+    }
+    
+    // Additional check: ensure source and destination columns are different
+    if (sourceColumnId === destColumnId) {
+      console.log('Task already in destination column, skipping move');
+      set({ isDragInProgress: false });
       return;
     }
 
@@ -685,6 +710,9 @@ export const useStore = create((set, get) => ({
       await updateTaskAPI(projectId, boardId, sourceColumnId, taskId, {
         columnId: destColumnId
       });
+      
+      // Clear drag state on success
+      set({ isDragInProgress: false });
     } catch (error) {
       console.error('Failed to move task:', error);
       set({ error });
@@ -723,6 +751,9 @@ export const useStore = create((set, get) => ({
           selectedBoard: revertedSelectedBoard
         };
       });
+      
+      // Clear drag state on error
+      set({ isDragInProgress: false });
     }
   },
 
@@ -736,6 +767,9 @@ export const useStore = create((set, get) => ({
   openModal: (content = null) =>
     set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
+  
+  // Drag & Drop Actions
+  setDragInProgress: (isDragging) => set({ isDragInProgress: isDragging }),
 
   // RBAC Helper Functions (UI optimization only - server enforces security)
   getUserRole: (projectId) => {

@@ -128,6 +128,7 @@ const KanbanBoard = () => {
     setSelectedBoard,
     setSelectedProject,
     canEditTasks,
+    isDragInProgress,
   } = useStore();
   
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -189,6 +190,12 @@ const KanbanBoard = () => {
   }, [selectedProject, loadBoards]);
 
   useEffect(() => {
+    // Skip board synchronization during drag operations to prevent state conflicts
+    if (isDragInProgress) {
+      console.log("KanbanBoard: Skipping board sync during drag operation");
+      return;
+    }
+    
     console.log("KanbanBoard: Syncing selected board. Current boards count:", boards.length);
 
     if (boards.length > 0) {
@@ -218,7 +225,7 @@ const KanbanBoard = () => {
       console.log("KanbanBoard: No boards available, clearing selection.");
       setSelectedBoard(null);
     }
-  }, [boards, selectedBoard, setSelectedBoard]);
+  }, [boards, selectedBoard, setSelectedBoard, isDragInProgress]);
 
   const handleEditTask = (task) => {
     handleOpenTaskForm(task);
