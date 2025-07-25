@@ -14,8 +14,8 @@ import {
   FormActions,
   PrimaryButton,
   SecondaryButton,
-  LoadingSpinner
 } from "./common/FormComponents";
+import LoadingSpinner from "./common/LoadingSpinner";
 
 
 const TaskForm = ({ task, onClose }) => {

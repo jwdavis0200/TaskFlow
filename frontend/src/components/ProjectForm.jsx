@@ -12,9 +12,9 @@ import {
   PrimaryButton,
   SecondaryButton,
   ErrorMessage,
-  LoadingSpinner,
   Button
 } from "./common/FormComponents";
+import LoadingSpinner from "./common/LoadingSpinner";
 import ProjectMembersModal from './ProjectMembersModal';
 
 

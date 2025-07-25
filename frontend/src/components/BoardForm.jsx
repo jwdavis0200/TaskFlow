@@ -12,8 +12,8 @@ import {
   PrimaryButton,
   SecondaryButton,
   ErrorMessage,
-  LoadingSpinner
 } from "./common/FormComponents";
+import LoadingSpinner from "./common/LoadingSpinner";
 
 
 

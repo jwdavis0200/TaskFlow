@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { useStore } from "../store";
+import LoadingSpinner from "./common/LoadingSpinner";
 
 const AuthContainer = styled.div`
   position: fixed;
@@ -144,32 +145,7 @@ const AuthButton = styled.button`
   }
 `;
 
-const LoadingSpinner = styled.div`
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(59, 130, 246, 0.2);
-  border-radius: 50%;
-  border-top-color: #3b82f6;
-  border-right-color: #1d4ed8;
-  animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  margin-bottom: 16px;
-  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
 
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-      filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
-    }
-    50% {
-      filter: drop-shadow(0 6px 12px rgba(29, 78, 216, 0.4));
-    }
-    100% {
-      transform: rotate(360deg);
-      filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
-    }
-  }
-`;
 
 const LoadingContainer = styled.div`
   min-height: 100vh;
