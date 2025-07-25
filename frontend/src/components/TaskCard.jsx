@@ -157,11 +157,11 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
 
   const [{ isDragging }, drag] = useDrag({
     type: "task",
-    item: { id: task._id },
-    canDrag: () => canEditTasks(projectId),
-    begin: () => {
+    item: () => {
       setDragInProgress(true);
+      return { id: task._id };
     },
+    canDrag: () => canEditTasks(projectId),
     end: () => {
       setDragInProgress(false);
     },
