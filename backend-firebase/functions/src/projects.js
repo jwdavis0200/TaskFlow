@@ -1,6 +1,15 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { validateAuth, validateProjectAccess, validateProjectPermission, ROLES, PERMISSIONS, validateRole, hasPermission } = require('./middleware/auth');
+const {
+  validateAuth,
+  validateProjectAccess,
+  validateProjectPermission,
+  ROLES,
+  PERMISSIONS,
+  validateRole,
+  hasPermission,
+  getUserRole
+} = require('./middleware/auth');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 
 /**
@@ -370,10 +379,15 @@ exports.migrateProjectsToRBAC = onCall(async (request) => {
 
 // Invite user to project - RBAC enforced
 exports.inviteUserToProject = onCall(async (request) => {
+  console.log('🚀 inviteUserToProject called with:', { projectId: request.data?.projectId, email: request.data?.email, role: request.data?.role });
+  
   const userId = validateAuth(request);
+  console.log('✅ User authenticated:', userId);
+  
   const { projectId, email, role = 'editor' } = request.data;
   
   if (!projectId || !email) {
+    console.log('❌ Missing required fields:', { projectId, email });
     throw new HttpsError('invalid-argument', 'Project ID and email are required');
   }
   
@@ -387,18 +401,29 @@ exports.inviteUserToProject = onCall(async (request) => {
     const projectData = await validateProjectPermission(db, projectId, userId, PERMISSIONS.INVITE_MEMBERS);
     
     // Additional security: Only owner and admin can invite admins
-    const { getUserRole } = require('./middleware/auth');
     const actorRole = getUserRole(projectData, userId);
-    
     if (role === ROLES.ADMIN && actorRole !== ROLES.OWNER) {
       throw new HttpsError('permission-denied', 'Only project owner can invite admins');
+    }
+
+    // Check if an invitation has already been sent to this email for this project
+    const existingInvitation = await db.collection('invitations')
+      .where('projectId', '==', projectId)
+      .where('inviteeEmail', '==', email.toLowerCase())
+      .where('status', '==', 'pending')
+      .get();
+    if (!existingInvitation.empty) {
+      throw new HttpsError('already-exists', 'An invitation has already been sent to this email for this project.');
     }
     
     // Check if user already exists in Firebase Auth by email
     let inviteeUser;
     try {
+      console.log('🔍 Looking up user by email:', email);
       inviteeUser = await admin.auth().getUserByEmail(email);
+      console.log('✅ User found:', inviteeUser.uid);
     } catch (error) {
+      console.log('❌ User not found in Firebase Auth:', error.code);
       // User doesn't exist in Firebase Auth yet
       inviteeUser = null;
     }
@@ -408,10 +433,13 @@ exports.inviteUserToProject = onCall(async (request) => {
       throw new HttpsError('already-exists', 'User is already a member of this project');
     }
     
-    // Create invitation
-    const invitationRef = db.collection('invitations').doc();
+    // Create invitation with deterministic ID to prevent race conditions
+    console.log('📝 Creating invitation document...');
+    const invitationId = `${projectId}_${email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
+    const invitationRef = db.collection('invitations').doc(invitationId);
     const expirationDate = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)); // 7 days from now
-    await invitationRef.set({
+    
+    const invitationData = {
       projectId,
       projectName: projectData.name,
       inviterUserId: userId,
@@ -422,7 +450,11 @@ exports.inviteUserToProject = onCall(async (request) => {
       status: 'pending',
       createdAt: FieldValue.serverTimestamp(),
       expiresAt: Timestamp.fromDate(expirationDate)
-    });
+    };
+    
+    console.log('💾 Invitation data:', invitationData);
+    await invitationRef.set(invitationData);
+    console.log('✅ Invitation created successfully with ID:', invitationRef.id);
     
     return { 
       invitationId: invitationRef.id,

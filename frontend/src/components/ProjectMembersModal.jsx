@@ -171,6 +171,16 @@ const InviteTitle = styled.h3`
   gap: 8px;
 `;
 
+const ErrorMessage = styled.p`
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-top: 16px;
+`;
+
 const EmptyState = styled.div`
   text-align: center;
   padding: 32px;
@@ -205,6 +215,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
   const [newRole, setNewRole] = useState('');
   const [isChangingRole, setIsChangingRole] = useState(false);
   const [invitationToSend, setInvitationToSend] = useState(null);
+  const [invitationError, setInvitationError] = useState(null);
 
   useEffect(() => {
     if (isOpen && project) {
@@ -218,6 +229,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
 
   const handleInviteMemberConfirm = async () => {
     if (!invitationToSend) return;
+    setInvitationError(null); // Reset error on new submission
     
     try {
       await inviteUserToProject(project._id, invitationToSend.email, invitationToSend.role);
@@ -225,6 +237,11 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
       setInvitationToSend(null);
     } catch (error) {
       console.error('Failed to send invitation:', error);
+      if (error.code === 'functions/already-exists') {
+        setInvitationError(error.message);
+      } else {
+        setInvitationError('An unexpected error occurred. Please try again.');
+      }
     }
   };
 
@@ -386,12 +403,18 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                     {showInviteForm ? (
                       <InviteMemberForm
                         onInvite={handleInviteMember}
-                        onCancel={() => setShowInviteForm(false)}
+                        onCancel={() => {
+                          setShowInviteForm(false);
+                          setInvitationError(null);
+                        }}
                         loading={collaborationLoading}
                       />
                     ) : (
                       <button
-                        onClick={() => setShowInviteForm(true)}
+                        onClick={() => {
+                          setShowInviteForm(true);
+                          setInvitationError(null);
+                        }}
                         style={{
                           background: '#007bff',
                           color: 'white',
@@ -408,6 +431,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                         Invite Member
                       </button>
                     )}
+                    {invitationError && <ErrorMessage>{invitationError}</ErrorMessage>}
                   </InviteSection>
                 )}
               </>
