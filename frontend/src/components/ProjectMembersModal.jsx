@@ -13,6 +13,11 @@ const ModalContentInner = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 `;
 
 const Header = styled.div`
@@ -20,14 +25,16 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 24px 32px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 `;
 
 const Title = styled.h2`
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: white;
   font-weight: 600;
 `;
 
@@ -36,12 +43,14 @@ const CloseButton = styled.button`
   border: none;
   cursor: pointer;
   padding: 8px;
-  color: #666;
-  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  transition: all 0.2s ease;
   
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #333;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: scale(1.05);
   }
 `;
 
@@ -77,14 +86,20 @@ const MemberItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  background: white;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   
   &:hover {
-    background: #f8f9fa;
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -132,27 +147,45 @@ const MemberActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(102, 126, 234, 0.3);
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  color: #666;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #333;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
   
-  &.danger:hover {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+  &.danger {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    
+    &:hover {
+      background: linear-gradient(45deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
   }
 `;
 
 const InviteSection = styled.div`
-  border-top: 1px solid #e0e0e0;
   padding-top: 24px;
+  margin-top: 24px;
+  background: rgba(71, 155, 165, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 `;
 
 const InviteHeader = styled.div`
@@ -165,32 +198,46 @@ const InviteHeader = styled.div`
 const InviteTitle = styled.h3`
   margin: 0;
   font-size: 1.1rem;
-  color: #333;
+  color: #667eea;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
 `;
 
 const ErrorMessage = styled.p`
-  color: #dc3545;
-  background-color: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.2);
-  padding: 12px;
-  border-radius: 6px;
+  color: #dc2626;
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(185, 28, 28, 0.05));
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  padding: 16px;
+  border-radius: 12px;
   font-size: 0.9rem;
   margin-top: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-weight: 500;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 32px;
-  color: #666;
+  padding: 48px 32px;
+  color: #667eea;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-weight: 500;
 `;
 
 const LoadingState = styled.div`
   text-align: center;
-  padding: 24px;
-  color: #666;
+  padding: 32px 24px;
+  color: #667eea;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-weight: 500;
 `;
 
 const ProjectMembersModal = ({ isOpen, onClose, project }) => {
