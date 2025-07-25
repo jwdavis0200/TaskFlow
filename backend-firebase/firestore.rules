@@ -1,88 +1,149 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to get user role in project
-    function getUserRole(projectData, userId) {
-      return projectData.owner == userId ? 'owner' : 
-             (projectData.memberRoles != null && userId in projectData.memberRoles) ? 
-             projectData.memberRoles[userId] : 
-             (projectData.members != null && userId in projectData.members) ? 'editor' : null;  // backward compatibility
+
+    // HELPER FUNCTIONS
+    // These functions check roles hierarchically. For example, an admin is also an editor,
+    // and an editor is also a viewer.
+
+    // Checks if the user is the project owner.
+    function isOwner(projectData, userId) {
+      return projectData.owner == userId;
     }
-    
-    // Helper function to check if user has permission for action
-    function hasPermission(projectData, userId, action) {
-      let role = getUserRole(projectData, userId);
-      return role != null && 
-             ((action == 'view_only' && role in ['owner', 'admin', 'editor', 'viewer']) ||
-              (action == 'edit_tasks' && role in ['owner', 'admin', 'editor']) ||
-              (action == 'manage_boards' && role in ['owner', 'admin', 'editor']) ||
-              (action == 'edit_project' && role in ['owner', 'admin']) ||
-              (action == 'invite_members' && role in ['owner', 'admin']) ||
-              (action == 'remove_members' && role in ['owner', 'admin']));
+
+    // Checks if the user has an admin role (or is the owner).
+    function isAdmin(projectData, userId) {
+      return isOwner(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'admin');
     }
-    
-    // Users can read/write their own user document
+
+    // Checks if the user has an editor role (or higher).
+    // This also checks the legacy `members` map for editor access.
+    function isEditor(projectData, userId) {
+      return isAdmin(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'editor') ||
+             ('members' in projectData && userId in projectData.members);
+    }
+
+    // Checks if the user has a viewer role (or higher).
+    function isViewer(projectData, userId) {
+      return isEditor(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'viewer');
+    }
+
+    // COLLECTION RULES
+
+    // Users can read/write their own user document.
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Projects: role-based access control
+
+    // Projects: role-based access control.
     match /projects/{projectId} {
-      allow read: if request.auth != null && 
-        hasPermission(resource.data, request.auth.uid, 'view_only');
-      
-      allow create: if request.auth != null && request.auth.uid != null;
-      
-      allow update: if request.auth != null && 
-        hasPermission(resource.data, request.auth.uid, 'edit_project');
-        
-      allow delete: if request.auth != null && 
-        resource.data.owner == request.auth.uid;
+      allow read: if request.auth != null && isViewer(resource.data, request.auth.uid);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && isAdmin(resource.data, request.auth.uid);
+      allow delete: if request.auth != null && isOwner(resource.data, request.auth.uid);
     }
-    
-    // Boards: role-based access through project
+
+    // Boards: role-based access through the parent project.
     match /boards/{boardId} {
-      allow read: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'view_only');
-      
-      allow create: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data, request.auth.uid, 'manage_boards');
-      
-      allow update, delete: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'manage_boards');
+      function getProjectData() {
+        return get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data;
+      }
+      function getProjectDataForCreate() {
+        return get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data;
+      }
+
+      allow read: if request.auth != null &&
+                     exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                     isViewer(getProjectData(), request.auth.uid);
+
+      allow create: if request.auth != null &&
+                       exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+                       isEditor(getProjectDataForCreate(), request.auth.uid);
+
+      allow update, delete: if request.auth != null &&
+                               exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                               isEditor(getProjectData(), request.auth.uid);
     }
-    
-    // Columns: role-based access through project
+
+    // Columns: role-based access through the parent project.
     match /columns/{columnId} {
-      allow read: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'view_only');
-      
-      allow create: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data, request.auth.uid, 'manage_boards');
-      
-      allow update, delete: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'manage_boards');
+      function getProjectData() {
+        return get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data;
+      }
+      function getProjectDataForCreate() {
+        return get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data;
+      }
+
+      allow read: if request.auth != null &&
+                     exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                     isViewer(getProjectData(), request.auth.uid);
+
+      allow create: if request.auth != null &&
+                       exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+                       isEditor(getProjectDataForCreate(), request.auth.uid);
+
+      allow update, delete: if request.auth != null &&
+                               exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                               isEditor(getProjectData(), request.auth.uid);
     }
-    
-    // Tasks: role-based access through project
+
+    // Tasks: role-based access through the parent project.
     match /tasks/{taskId} {
-      allow read: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'view_only');
-      
-      allow create: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data, request.auth.uid, 'edit_tasks');
-      
-      allow update, delete: if request.auth != null && 
-        exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-        hasPermission(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid, 'edit_tasks');
+      function getProjectData() {
+        return get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data;
+      }
+      function getProjectDataForCreate() {
+        return get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data;
+      }
+
+      allow read: if request.auth != null &&
+                     exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                     isViewer(getProjectData(), request.auth.uid);
+
+      allow create: if request.auth != null &&
+                       exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+                       isEditor(getProjectDataForCreate(), request.auth.uid);
+
+      allow update, delete: if request.auth != null &&
+                               exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                               isEditor(getProjectData(), request.auth.uid);
+    }
+
+    // Invitations: project-based access control.
+    match /invitations/{invitationId} {
+      // Allow reading invitations sent to the user's email/UID, or sent by the user.
+      allow read: if request.auth != null &&
+                     (resource.data.inviteeEmail == request.auth.token.email ||
+                      resource.data.inviteeUserId == request.auth.uid ||
+                      resource.data.inviterUserId == request.auth.uid);
+
+      // Allow creating invitations if user is an admin in the project.
+      allow create: if request.auth != null &&
+                       exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+                       isAdmin(get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data, request.auth.uid);
+
+      // Allow invitee to update invitations (for accepting/declining).
+      allow update: if request.auth != null &&
+                       (resource.data.inviteeEmail == request.auth.token.email ||
+                        resource.data.inviteeUserId == request.auth.uid);
+
+      // Allow deleting invitations if user is the inviter or invitee.
+      allow delete: if request.auth != null &&
+                       (resource.data.inviterUserId == request.auth.uid ||
+                        resource.data.inviteeUserId == request.auth.uid);
+    }
+
+    // Audit logs: only admins can read, nobody can write from the client.
+    match /audit_logs/{logId} {
+      allow read: if request.auth != null &&
+                     exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                     isAdmin(get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data, request.auth.uid);
+
+      allow write: if false; // Only server-side functions can create audit logs.
     }
   }
 }
