@@ -2,7 +2,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -81,4 +82,30 @@ export const clearAnonymousSessions = async () => {
  */
 export const onAuthStateChange = (callback) => {
   return onAuthStateChanged(auth, callback);
+};
+
+/**
+ * Send password reset email using Firebase's built-in handling
+ */
+export const sendPasswordReset = async (email) => {
+  try {
+    // Firebase handles the complete password reset flow
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    
+    // Return user-friendly error messages
+    let message = 'Failed to send password reset email';
+    if (error.code === 'auth/user-not-found') {
+      // For security, don't reveal if user exists
+      message = 'If an account with that email exists, a password reset email has been sent';
+    } else if (error.code === 'auth/invalid-email') {
+      message = 'Invalid email address';
+    } else if (error.code === 'auth/too-many-requests') {
+      message = 'Too many reset attempts. Please try again later';
+    }
+    
+    return { success: false, error: message };
+  }
 };

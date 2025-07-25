@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { useStore } from "../store";
 import LoadingSpinner from "./common/LoadingSpinner";
+import PasswordResetRequest from "./PasswordResetRequest";
 
 const AuthContainer = styled.div`
   position: fixed;
@@ -396,6 +397,7 @@ const AuthGuard = ({ children }) => {
   } = useStore();
 
   const [isLogin, setIsLogin] = useState(true);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -491,6 +493,7 @@ const AuthGuard = ({ children }) => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setShowPasswordReset(false);
     setPasswordValidation({
       hasMinLength: false,
       hasSpecialChar: false,
@@ -510,6 +513,23 @@ const AuthGuard = ({ children }) => {
   }
 
   if (!isAuthenticated) {
+    // Show password reset form
+    if (showPasswordReset) {
+      return (
+        <AuthContainer>
+          <AuthCard>
+            <AuthHeader>
+              <AuthTitle>TaskFlow Pro</AuthTitle>
+              <AuthSubtitle>Password Reset</AuthSubtitle>
+            </AuthHeader>
+            <AuthBody>
+              <PasswordResetRequest onBack={() => setShowPasswordReset(false)} />
+            </AuthBody>
+          </AuthCard>
+        </AuthContainer>
+      );
+    }
+
     return (
       <AuthContainer>
         <AuthCard>
@@ -586,6 +606,12 @@ const AuthGuard = ({ children }) => {
                 : "Already have an account? Sign in"
               }
             </AuthLink>
+            
+            {isLogin && (
+              <AuthLink onClick={() => setShowPasswordReset(true)}>
+                Forgot your password?
+              </AuthLink>
+            )}
           </AuthBody>
         </AuthCard>
       </AuthContainer>
