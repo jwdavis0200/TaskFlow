@@ -295,6 +295,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
         warningText="This action cannot be undone. The task and all its data will be permanently removed."
         confirmText="Delete Task"
         cancelText="Cancel"
+        modalType="danger"
         isLoading={isDeleting}
       />
     </CardContainer>

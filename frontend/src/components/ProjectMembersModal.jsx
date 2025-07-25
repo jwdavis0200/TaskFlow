@@ -495,6 +495,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
           warningText="They will lose access to all boards and tasks in this project."
           onConfirm={handleRemoveMember}
           onClose={() => setMemberToRemove(null)}
+          modalType="danger"
           isLoading={isRemoving}
         />
       )}
@@ -510,6 +511,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
             setMemberToChangeRole(null);
             setNewRole('');
           }}
+          modalType="info"
           isLoading={isChangingRole}
         />
       )}

@@ -331,6 +331,7 @@ const ProjectsList = ({ projects, loading }) => {
         message={`Are you sure you want to delete "${selectedProject?.name}"?`}
         warningText="This will permanently delete all boards and tasks in this project. This action cannot be undone."
         confirmText="Delete Project"
+        modalType="danger"
         isLoading={isDeleting}
       />
     </>
