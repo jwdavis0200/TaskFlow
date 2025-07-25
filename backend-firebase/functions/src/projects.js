@@ -128,6 +128,7 @@ exports.createProject = onCall(async (request) => {
         description: description || '',
         owner: userId,
         members: [userId],
+        memberRoles: {}, // Empty object for post-migration RBAC structure
         boards: [boardRef.id],
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
