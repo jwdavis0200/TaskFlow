@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import { Warning, Celebration, CheckCircle } from '@mui/icons-material';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
 
@@ -615,7 +616,10 @@ const MigrationPanel = () => {
                 <ResultDetail>Project ID: {project.projectId}</ResultDetail>
                 <ErrorDetails>
                   {project.warnings.map((warning, i) => (
-                    <div key={i}>⚠ {warning}</div>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Warning fontSize="small" />
+                      {warning}
+                    </div>
                   ))}
                 </ErrorDetails>
               </ResultInfo>
@@ -712,7 +716,10 @@ const MigrationPanel = () => {
         </Header>
         
         <div style={{ textAlign: 'center', padding: '40px' }}>
-          <h2>🎉 Your projects are already migrated!</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Celebration />
+            Your projects are already migrated!
+          </h2>
           <p>All your {migrationNeedStatus?.totalProjects || 0} projects have been successfully migrated to use Role-Based Access Control.</p>
           
           {migrationHistory.length > 0 && (
@@ -846,10 +853,22 @@ const MigrationPanel = () => {
             
             <OverviewSubheading>What you get:</OverviewSubheading>
             <OverviewUList>
-              <li>✅ Ability to invite team members to your projects</li>
-              <li>✅ Role-based permissions (Owner, Admin, Editor, Viewer)</li>
-              <li>✅ Secure collaboration with granular access control</li>
-              <li>✅ Invitation management system</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle fontSize="small" />
+                Ability to invite team members to your projects
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle fontSize="small" />
+                Role-based permissions (Owner, Admin, Editor, Viewer)
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle fontSize="small" />
+                Secure collaboration with granular access control
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle fontSize="small" />
+                Invitation management system
+              </li>
             </OverviewUList>
             
             <OverviewParagraph>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import { Assignment } from '@mui/icons-material';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
 import InvitationsPanel from './InvitationsPanel';
@@ -252,7 +253,7 @@ const Sidebar = () => {
         <SidebarHeader>
           <SidebarHeaderTop>
             <SidebarTitle>
-              <TitleIcon>📋</TitleIcon>
+              <TitleIcon><Assignment /></TitleIcon>
               Projects
             </SidebarTitle>
           </SidebarHeaderTop>

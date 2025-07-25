@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from '@emotion/styled';
+import { BarChart, Edit, Delete } from '@mui/icons-material';
 import { useStore } from '../store';
 
 const BoardsContainer = styled.div`
@@ -144,14 +145,15 @@ const BoardItemComponent = ({ board, projectId }) => {
   return (
     <BoardItem onClick={handleBoardSelect}>
       <BoardName>
-        📊 {board.name}
+        <BarChart style={{ marginRight: '8px' }} />
+        {board.name}
       </BoardName>
       <BoardActions>
         <EditButton onClick={handleEditBoard} title="Edit Board">
-          ✏️
+          <Edit fontSize="small" />
         </EditButton>
         <DeleteButton onClick={handleDeleteBoard} title="Delete Board">
-          🗑️
+          <Delete fontSize="small" />
         </DeleteButton>
       </BoardActions>
     </BoardItem>

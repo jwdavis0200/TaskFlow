@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
+import { Check, Close } from '@mui/icons-material';
 import { useStore } from "../store";
 import LoadingSpinner from "./common/LoadingSpinner";
 import PasswordResetRequest from "./PasswordResetRequest";
@@ -565,11 +566,11 @@ const AuthGuard = ({ children }) => {
               {!isLogin && password && (
                 <PasswordRequirements>
                   <RequirementItem className={passwordValidation.hasMinLength ? 'met' : 'unmet'}>
-                    <ValidationIcon>{passwordValidation.hasMinLength ? '✓' : '✗'}</ValidationIcon>
+                    <ValidationIcon>{passwordValidation.hasMinLength ? <Check /> : <Close />}</ValidationIcon>
                     At least 6 characters
                   </RequirementItem>
                   <RequirementItem className={passwordValidation.hasSpecialChar ? 'met' : 'unmet'}>
-                    <ValidationIcon>{passwordValidation.hasSpecialChar ? '✓' : '✗'}</ValidationIcon>
+                    <ValidationIcon>{passwordValidation.hasSpecialChar ? <Check /> : <Close />}</ValidationIcon>
                     Contains special character (!@#$%^&*(),.?":{}|&lt;&gt;)
                   </RequirementItem>
                 </PasswordRequirements>
@@ -585,7 +586,7 @@ const AuthGuard = ({ children }) => {
                   />
                   {confirmPassword && (
                     <ValidationIndicator className={passwordValidation.passwordsMatch ? 'valid' : 'invalid'}>
-                      <ValidationIcon>{passwordValidation.passwordsMatch ? '✓' : '✗'}</ValidationIcon>
+                      <ValidationIcon>{passwordValidation.passwordsMatch ? <Check /> : <Close />}</ValidationIcon>
                       {passwordValidation.passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
                     </ValidationIndicator>
                   )}

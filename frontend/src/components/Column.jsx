@@ -1,6 +1,7 @@
 import React from "react";
 import { useDrop } from "react-dnd";
 import styled from "@emotion/styled";
+import { Note } from '@mui/icons-material';
 import TaskCard from "./TaskCard";
 import { useStore } from "../store";
 
@@ -103,9 +104,14 @@ const EmptyState = styled.div`
   margin-top: 20px;
 
   &::before {
-    content: "📝";
     font-size: 32px;
     margin-bottom: 8px;
+  }
+  
+  svg {
+    font-size: 32px;
+    margin-bottom: 8px;
+    color: #666;
   }
 `;
 
@@ -148,7 +154,10 @@ const Column = ({ column, onEdit, projectId, boardId }) => {
             />
           ))
         ) : (
-          <EmptyState>Drop tasks here or create a new one</EmptyState>
+          <EmptyState>
+            <Note style={{ fontSize: 32, marginBottom: 8, color: '#666' }} />
+            Drop tasks here or create a new one
+          </EmptyState>
         )}
       </TasksContainer>
     </ColumnContainer>

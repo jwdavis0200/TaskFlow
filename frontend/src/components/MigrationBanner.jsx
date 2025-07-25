@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import { Rocket } from '@mui/icons-material';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
 import { useStore } from '../store';
@@ -132,7 +133,10 @@ const MigrationBanner = ({ onOpenMigration }) => {
   return (
     <Banner>
       <BannerContent>
-        <BannerTitle>🚀 Enable Team Collaboration</BannerTitle>
+        <BannerTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Rocket />
+          Enable Team Collaboration
+        </BannerTitle>
         <BannerMessage>
           {migrationStatus.projectsToMigrate} of your projects need a quick update to enable invitations and team collaboration features.
         </BannerMessage>

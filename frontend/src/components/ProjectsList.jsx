@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
+import { Assignment, Edit, Delete } from '@mui/icons-material';
 import { FaUsers } from 'react-icons/fa';
 import { useStore } from '../store';
 import BoardsList from './BoardsList';
@@ -180,7 +181,8 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeletePro
       <ProjectHeader>
         <ProjectInfo>
           <ProjectName onClick={handleProjectClick}>
-            📋 {project.name}
+            <Assignment style={{ marginRight: '8px' }} />
+            {project.name}
           </ProjectName>
           <ProjectMeta>
             <FaUsers size={12} />
@@ -195,12 +197,12 @@ const ProjectListItem = ({ project, onShowBoardModal, onEditProject, onDeletePro
           )}
           {canEditProject(project._id) && (
             <EditButton onClick={handleEditProject} title="Edit Project">
-              ✏️
+              <Edit fontSize="small" />
             </EditButton>
           )}
           {isProjectOwner(project._id) && (
             <DeleteButton onClick={handleDeleteProject} title="Delete Project">
-              🗑️
+              <Delete fontSize="small" />
             </DeleteButton>
           )}
         </ProjectActions>

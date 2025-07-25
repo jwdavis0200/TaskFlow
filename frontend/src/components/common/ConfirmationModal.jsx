@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "@emotion/styled";
+import { Warning } from '@mui/icons-material';
 import LoadingSpinner from "./LoadingSpinner";
 import Modal from "./Modal";
 
@@ -41,22 +42,22 @@ const ConfirmationMessage = styled.p`
 `;
 
 const WarningText = styled.div`
-  margin: 0 0 24px 0;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 500;
   background: #fef2f2;
-  padding: 14px 16px;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px;
   border-radius: 8px;
   border-left: 4px solid #ef4444;
   line-height: 1.4;
   position: relative;
-  
-  &:before {
-    content: "⚠️";
-    margin-right: 8px;
-    font-size: 14px;
-  }
+  display: flex;
+  align-items: flex-start;
+`;
+
+const WarningIconWrapper = styled.div`
+  margin-right: 8px;
+  margin-top: 2px;
+  color: #991b1b;
 `;
 
 const ConfirmationActions = styled.div`
@@ -151,6 +152,9 @@ const ConfirmationModal = ({
           
           {warningText && (
             <WarningText>
+              <WarningIconWrapper>
+                <Warning fontSize="small" />
+              </WarningIconWrapper>
               {warningText}
             </WarningText>
           )}
