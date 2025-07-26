@@ -1,0 +1,67 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for TaskFlow Pro - PRODUCTION VERSION
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to get project data from Firestore
+    function getProjectData(projectId) {
+      return firestore.get(/databases/(default)/documents/projects/$(projectId)).data;
+    }
+    
+    // Helper function to get task data from Firestore
+    function getTaskData(taskId) {
+      return firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
+    }
+    
+    // Checks if the user is the project owner
+    function isOwner(projectData, userId) {
+      return projectData.owner == userId;
+    }
+    
+    // Checks if the user has an admin role (or is the owner)
+    function isAdmin(projectData, userId) {
+      return isOwner(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'admin');
+    }
+    
+    // Checks if the user has an editor role (or higher)
+    function isEditor(projectData, userId) {
+      return isAdmin(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'editor') ||
+             ('members' in projectData && userId in projectData.members);
+    }
+    
+    // Checks if the user has a viewer role (or higher)
+    function isViewer(projectData, userId) {
+      return isEditor(projectData, userId) ||
+             ('memberRoles' in projectData && projectData.memberRoles[userId] == 'viewer');
+    }
+    
+    // Task attachments: /tasks/{taskId}/attachments/{attachmentId}.{ext}
+    match /tasks/{taskId}/attachments/{attachmentFile} {
+      // Viewers and above can read (download) attachments
+      allow read: if request.auth != null &&
+                     exists(/databases/(default)/documents/tasks/$(taskId)) &&
+                     isViewer(getProjectData(getTaskData(taskId).projectId), request.auth.uid);
+      
+      // Editors and above can write (upload/delete) attachments
+      allow write: if request.auth != null &&
+                      exists(/databases/(default)/documents/tasks/$(taskId)) &&
+                      isEditor(getProjectData(getTaskData(taskId).projectId), request.auth.uid) &&
+                      // File size limit: 10MB
+                      request.resource.size <= 10 * 1024 * 1024 &&
+                      // Allowed MIME types
+                      (request.resource.contentType.matches('image/.*') ||
+                       request.resource.contentType.matches('application/pdf') ||
+                       request.resource.contentType.matches('application/msword') ||
+                       request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+                       request.resource.contentType.matches('text/.*'));
+    }
+    
+    // Deny all other storage access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
