@@ -234,3 +234,48 @@ export const migrateProjectsToRBACAPI = async () => {
 
 // Note: Push notifications will be handled through Firebase Cloud Messaging
 // when implemented in the migration
+
+// Attachment API Functions
+export const generateAttachmentUploadURL = async (taskId, fileName, fileSize, mimeType) => {
+  try {
+    const generateUploadURL = httpsCallable(functions, 'generateAttachmentUploadURL');
+    const result = await generateUploadURL({ taskId, fileName, fileSize, mimeType });
+    return result.data;
+  } catch (error) {
+    console.error('API Error generating upload URL:', error);
+    throw error;
+  }
+};
+
+export const confirmAttachmentUpload = async (taskId, attachmentId, fileName, fileSize, mimeType, storagePath) => {
+  try {
+    const confirmUpload = httpsCallable(functions, 'confirmAttachmentUpload');
+    const result = await confirmUpload({ taskId, attachmentId, fileName, fileSize, mimeType, storagePath });
+    return result.data;
+  } catch (error) {
+    console.error('API Error confirming upload:', error);
+    throw error;
+  }
+};
+
+export const deleteTaskAttachment = async (taskId, attachmentId) => {
+  try {
+    const deleteAttachment = httpsCallable(functions, 'deleteTaskAttachment');
+    const result = await deleteAttachment({ taskId, attachmentId });
+    return result.data;
+  } catch (error) {
+    console.error('API Error deleting attachment:', error);
+    throw error;
+  }
+};
+
+export const getAttachmentDownloadURL = async (taskId, attachmentId) => {
+  try {
+    const getDownloadURL = httpsCallable(functions, 'getAttachmentDownloadURL');
+    const result = await getDownloadURL({ taskId, attachmentId });
+    return result.data.downloadUrl;
+  } catch (error) {
+    console.error('API Error getting download URL:', error);
+    throw error;
+  }
+};

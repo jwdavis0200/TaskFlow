@@ -16,6 +16,7 @@ import {
   SecondaryButton,
 } from "./common/FormComponents";
 import LoadingSpinner from "./common/LoadingSpinner";
+import AttachmentManager from "./AttachmentManager";
 
 
 const TaskForm = ({ task, onClose }) => {
@@ -28,6 +29,7 @@ const TaskForm = ({ task, onClose }) => {
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [columnId, setColumnId] = useState("");
+  const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -37,6 +39,7 @@ const TaskForm = ({ task, onClose }) => {
       setDueDate(formatDateForInput(task.dueDate));
       setPriority(task.priority || "medium");
       setColumnId(task.columnId || "");
+      setAttachments(Array.isArray(task.attachments) ? task.attachments : []);
     }
   }, [task]);
 
@@ -97,7 +100,25 @@ const TaskForm = ({ task, onClose }) => {
         });
       } else {
         // Create new task
-        await addTask(projectId, boardId, targetColumnId, taskData);
+        const createdTask = await addTask(projectId, boardId, targetColumnId, taskData);
+        
+        // Upload any pending files after task creation
+        const pendingFiles = attachments.filter(att => att.file && att.status === 'ready');
+        if (pendingFiles.length > 0) {
+          console.log("TaskForm: Uploading pending files for new task:", createdTask._id, pendingFiles);
+          // Import uploadTaskAttachment to handle pending files
+          const { uploadTaskAttachment } = await import('../services/storage');
+          
+          for (const pendingFile of pendingFiles) {
+            try {
+              await uploadTaskAttachment(createdTask._id, pendingFile.file);
+              console.log("TaskForm: Successfully uploaded:", pendingFile.fileName);
+            } catch (uploadError) {
+              console.error("TaskForm: Failed to upload:", pendingFile.fileName, uploadError);
+              // Continue with other files even if one fails
+            }
+          }
+        }
       }
 
       onClose();
@@ -180,6 +201,16 @@ const TaskForm = ({ task, onClose }) => {
             id="dueDate"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="attachments">Attachments</Label>
+          <AttachmentManager
+            taskId={task?._id || null}
+            existingAttachments={attachments}
+            onAttachmentsChange={setAttachments}
+            disabled={isSubmitting}
           />
         </FormGroup>
 

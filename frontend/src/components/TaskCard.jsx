@@ -275,6 +275,11 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
             Due {formatDateForDisplay(task.dueDate)}
           </DueDateTag>
         )}
+        {task.attachments && task.attachments.length > 0 && (
+          <MetaTag style={{ background: '#e8f5e8', color: '#2e7d32' }}>
+            📎 {task.attachments.length}
+          </MetaTag>
+        )}
       </TaskMeta>
 
       <TimerContainer>

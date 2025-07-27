@@ -486,6 +486,8 @@ export const useStore = create((set, get) => ({
             : state.selectedBoard,
         loading: false,
       }));
+      
+      return normalizedTask; // Return the created task
     } catch (error) {
       console.error("Store: Error creating task:", error);
       set({ error, loading: false });

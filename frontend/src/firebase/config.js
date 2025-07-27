@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-key",
@@ -19,6 +20,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, 'us-central1');
+export const storage = getStorage(app);
 
 // Connect to emulators only when explicitly enabled
 if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
@@ -46,6 +48,14 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
       console.log('Connected to Functions emulator');
     } catch (error) {
       console.log('Functions emulator already connected or unavailable');
+    }
+    
+    try {
+      // Storage emulator
+      connectStorageEmulator(storage, '127.0.0.1', 9199);
+      console.log('Connected to Storage emulator');
+    } catch (error) {
+      console.log('Storage emulator already connected or unavailable');
     }
   }
 }
