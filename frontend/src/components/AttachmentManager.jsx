@@ -305,20 +305,14 @@ const AttachmentManager = forwardRef(({
     const uploadBoardId = overrideBoardId || boardId;
     const pendingFilesToUpload = pendingFiles.filter(pf => pf.status === 'ready');
     if (pendingFilesToUpload.length === 0) {
-      // For existing task flow, notify completion via callback
-      if (!overrideTaskId && onUploadComplete) {
-        onUploadComplete({ success: true, errors: [] });
-      }
-      // For new task flow, just return (no files to upload)
+      // No files to upload, just return
       return;
     }
 
     const uploadErrors = [];
-    // Determine if this is a new task flow (called with parameters) or existing task flow
-    const isNewTaskFlow = overrideTaskId !== null;
     
     for (const pendingFile of pendingFilesToUpload) {
-      // Update pending file status to 'uploading' before adding optimistic attachment
+      // Update pending file status to 'uploading'
       setPendingFiles(prev => 
         prev.map(pf => 
           pf.id === pendingFile.id 
@@ -326,21 +320,6 @@ const AttachmentManager = forwardRef(({
             : pf
         )
       );
-      
-      // For existing tasks (when called via useEffect), add optimistic store updates
-      // For new tasks (when called directly with parameters), avoid store updates
-      let tempAttachment = null;
-      
-      if (!isNewTaskFlow && uploadBoardId && uploadTaskId) {
-        tempAttachment = {
-          id: pendingFile.id, // Use existing ID to avoid duplicates
-          fileName: pendingFile.fileName,
-          fileSize: pendingFile.fileSize,
-          mimeType: pendingFile.mimeType,
-          uploading: true
-        };
-        updateTaskAttachments(uploadBoardId, uploadTaskId, tempAttachment);
-      }
       
       try {
         // Perform actual upload with progress tracking
@@ -353,11 +332,6 @@ const AttachmentManager = forwardRef(({
           }
         );
         
-        // For existing tasks, replace temp attachment with real one
-        if (!isNewTaskFlow && uploadBoardId && uploadTaskId && tempAttachment) {
-          removeTaskAttachment(uploadBoardId, uploadTaskId, pendingFile.id);
-          updateTaskAttachments(uploadBoardId, uploadTaskId, result.attachment);
-        }
         
         // Remove from pending files and clear progress
         setPendingFiles(prev => prev.filter(pf => pf.id !== pendingFile.id));
@@ -370,10 +344,6 @@ const AttachmentManager = forwardRef(({
       } catch (uploadError) {
         console.error("AttachmentManager: Failed to upload:", pendingFile.fileName, uploadError);
         
-        // Remove failed temp attachment (existing tasks only)
-        if (!isNewTaskFlow && uploadBoardId && uploadTaskId && tempAttachment) {
-          removeTaskAttachment(uploadBoardId, uploadTaskId, pendingFile.id);
-        }
         
         // Clear progress and mark as failed
         setUploadProgress(prev => {
@@ -395,17 +365,9 @@ const AttachmentManager = forwardRef(({
       }
     }
     
-    // For new task flow, throw error if there were upload failures
-    if (isNewTaskFlow && uploadErrors.length > 0) {
+    // Throw error if there were upload failures
+    if (uploadErrors.length > 0) {
       throw new Error(uploadErrors.join('; '));
-    }
-    
-    // For existing task flow, notify completion via callback (if provided)
-    if (!isNewTaskFlow && onUploadComplete) {
-      onUploadComplete({ 
-        success: uploadErrors.length === 0, 
-        errors: uploadErrors 
-      });
     }
   };
 
