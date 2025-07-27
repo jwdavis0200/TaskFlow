@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 
@@ -78,16 +78,55 @@ const ModalContent = styled.div`
 `;
 
 const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = false }) => {
-  if (!isOpen) return null;
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPointerDown, setIsPointerDown] = useState(false);
 
-  const handleOverlayClick = (e) => {
+  const handlePointerDown = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      setIsPointerDown(true);
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handlePointerMove = useCallback((e) => {
+    if (isPointerDown && !isDragging) {
+      // First movement after pointer down = drag detected
+      setIsDragging(true);
+    }
+  }, [isPointerDown, isDragging]);
+
+  const handlePointerUp = useCallback(() => {
+    setIsPointerDown(false);
+    // Keep isDragging state briefly to prevent immediate click
+    setTimeout(() => setIsDragging(false), 10);
+  }, []);
+
+  const handleOverlayClick = useCallback((e) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
+      // Don't close if there's selected text
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        return;
+      }
+      
+      // Don't close if we detected dragging
+      if (isDragging) {
+        return;
+      }
+      
       onClose();
     }
-  };
+  }, [closeOnOverlayClick, onClose, isDragging]);
+
+  if (!isOpen) return null;
 
   const modalContent = (
-    <ModalOverlay onClick={handleOverlayClick}>
+    <ModalOverlay 
+      onClick={handleOverlayClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
       <ModalContent wide={wide}>
         {children}
       </ModalContent>

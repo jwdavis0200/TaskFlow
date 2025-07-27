@@ -413,18 +413,36 @@ const AttachmentManager = forwardRef(({
     }
   };
 
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent (modal)
+    setDragOver(true);
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent (modal)
     setDragOver(true);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    setDragOver(false);
+    e.stopPropagation(); // Prevent event from bubbling to parent (modal)
+    
+    // Only set dragOver to false if we're actually leaving the attachment container
+    // This prevents flickering when dragging over child elements
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOver(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent (modal)
     setDragOver(false);
     
     if (disabled) return;
@@ -436,6 +454,7 @@ const AttachmentManager = forwardRef(({
   return (
     <AttachmentContainer
       className={dragOver ? 'dragover' : ''}
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
