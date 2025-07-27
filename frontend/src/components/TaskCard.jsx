@@ -34,6 +34,10 @@ const TaskTitle = styled.h4`
   font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 `;
 
 const TaskDescription = styled.p`

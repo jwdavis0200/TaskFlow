@@ -17,6 +17,14 @@ const ColumnContainer = styled.div`
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  
+  @media (max-width: 768px) {
+    max-width: calc(100vw - 40px);
+    width: 100%;
+    box-sizing: border-box;
+  }
 
   ${(props) =>
     props.isOver &&
@@ -48,6 +56,16 @@ const ColumnTitle = styled.h3`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+    line-height: 1.2;
+  }
 `;
 
 const TaskCount = styled.span`

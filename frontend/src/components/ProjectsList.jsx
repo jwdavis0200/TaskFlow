@@ -35,8 +35,10 @@ const ProjectHeader = styled.div`
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 1px solid #e2e8f0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const ProjectName = styled.h3`
@@ -45,7 +47,11 @@ const ProjectName = styled.h3`
   margin: 0;
   cursor: pointer;
   transition: color 0.2s ease;
-  flex: 1;
+  font-size: 16px;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
   
   &:hover {
     color: #3b82f6;
@@ -70,16 +76,8 @@ const ProjectMeta = styled.div`
 const ProjectActions = styled.div`
   display: flex;
   gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-
-  ${ProjectItem}:hover & {
-    opacity: 1;
-  }
-  
-  @media (max-width: 768px) {
-    opacity: 1;
-  }
+  align-items: center;
+  justify-content: flex-start;
 `;
 
 const ActionButton = styled.button`
