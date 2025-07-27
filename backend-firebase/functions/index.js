@@ -1,7 +1,11 @@
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin SDK
-admin.initializeApp();
+// Initialize Firebase Admin SDK with Application Default Credentials for signed URL generation
+admin.initializeApp({
+  projectId: 'taskflow-production',
+  storageBucket: 'taskflow-production.firebasestorage.app',
+  credential: admin.credential.applicationDefault()
+});
 
 // Import and export functions
 const projects = require('./src/projects');
@@ -46,6 +50,12 @@ exports.updateTask = tasks.updateTask;
 exports.deleteTask = tasks.deleteTask;
 exports.startTimer = tasks.startTimer;
 exports.stopTimer = tasks.stopTimer;
+
+// Export attachment functions
+exports.generateAttachmentUploadURL = tasks.generateAttachmentUploadURL;
+exports.confirmAttachmentUpload = tasks.confirmAttachmentUpload;
+exports.deleteTaskAttachment = tasks.deleteTaskAttachment;
+exports.getAttachmentDownloadURL = tasks.getAttachmentDownloadURL;
 
 // Export notification functions
 exports.sendTaskNotification = notifications.sendTaskNotification;
