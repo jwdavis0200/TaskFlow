@@ -773,6 +773,8 @@ exports.getAttachmentDownloadURL = onCall(async (request) => {
           version: 'v4',
           action: 'read',
           expires: Date.now() + 60 * 60 * 1000, // 1 hour
+          responseDisposition: `attachment; filename="${attachment.fileName}"`,
+          responseType: 'application/octet-stream'
         });
         
         return { downloadUrl };

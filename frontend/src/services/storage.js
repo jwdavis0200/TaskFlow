@@ -303,7 +303,6 @@ export const downloadAttachment = async (taskId, attachmentId, fileName) => {
         const link = document.createElement('a');
         link.href = downloadURL;
         link.download = fileName;
-        link.target = '_blank';
         
         document.body.appendChild(link);
         link.click();
@@ -321,7 +320,6 @@ export const downloadAttachment = async (taskId, attachmentId, fileName) => {
           const link = document.createElement('a');
           link.href = downloadUrl;
           link.download = fileName;
-          link.target = '_blank';
           
           document.body.appendChild(link);
           link.click();
@@ -343,7 +341,6 @@ export const downloadAttachment = async (taskId, attachmentId, fileName) => {
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = fileName;
-        link.target = '_blank';
         
         document.body.appendChild(link);
         link.click();
