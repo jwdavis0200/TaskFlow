@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../store";
 import { formatDateForInput, createDateFromInput } from "../utils/dateUtils";
 import {
@@ -24,13 +24,18 @@ const TaskForm = ({ task, onClose }) => {
   const updateTask = useStore((state) => state.updateTask);
   const selectedBoard = useStore((state) => state.selectedBoard);
   const projects = useStore((state) => state.projects);
+  const attachmentManagerRef = useRef();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
   const [columnId, setColumnId] = useState("");
-  const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachmentErrors, setAttachmentErrors] = useState([]);
+
+  // Clear attachment errors when starting new operations
+  const clearAttachmentErrors = () => setAttachmentErrors([]);
+  
 
   useEffect(() => {
     if (task) {
@@ -39,7 +44,6 @@ const TaskForm = ({ task, onClose }) => {
       setDueDate(formatDateForInput(task.dueDate));
       setPriority(task.priority || "medium");
       setColumnId(task.columnId || "");
-      setAttachments(Array.isArray(task.attachments) ? task.attachments : []);
     }
   }, [task]);
 
@@ -55,6 +59,7 @@ const TaskForm = ({ task, onClose }) => {
     }
   }, [selectedBoard?.columns, task]);
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -69,6 +74,7 @@ const TaskForm = ({ task, onClose }) => {
     }
 
     setIsSubmitting(true);
+    clearAttachmentErrors(); // Clear any previous attachment errors
 
     try {
       const taskData = {
@@ -98,34 +104,41 @@ const TaskForm = ({ task, onClose }) => {
           ...taskData, 
           columnId: newColumnId 
         });
+        
+        // Upload pending attachments if any exist
+        if (attachmentManagerRef.current) {
+          try {
+            await attachmentManagerRef.current.uploadPendingFiles(task._id, boardId);
+            onClose(); // Close modal after successful upload
+          } catch (uploadError) {
+            console.error("TaskForm: Failed to upload attachments:", uploadError);
+            setAttachmentErrors([`Failed to upload attachments: ${uploadError.message}`]);
+            setIsSubmitting(false);
+          }
+        } else {
+          onClose(); // No attachments, close immediately
+        }
       } else {
         // Create new task
         const createdTask = await addTask(projectId, boardId, targetColumnId, taskData);
         
-        // Upload any pending files after task creation
-        const pendingFiles = attachments.filter(att => att.file && att.status === 'ready');
-        if (pendingFiles.length > 0) {
-          console.log("TaskForm: Uploading pending files for new task:", createdTask._id, pendingFiles);
-          // Import uploadTaskAttachment to handle pending files
-          const { uploadTaskAttachment } = await import('../services/storage');
-          
-          for (const pendingFile of pendingFiles) {
-            try {
-              await uploadTaskAttachment(createdTask._id, pendingFile.file);
-              console.log("TaskForm: Successfully uploaded:", pendingFile.fileName);
-            } catch (uploadError) {
-              console.error("TaskForm: Failed to upload:", pendingFile.fileName, uploadError);
-              // Continue with other files even if one fails
-            }
+        // Upload pending attachments if any exist
+        if (attachmentManagerRef.current) {
+          try {
+            await attachmentManagerRef.current.uploadPendingFiles(createdTask._id, boardId);
+            onClose(); // Close modal after successful upload
+          } catch (uploadError) {
+            console.error("TaskForm: Failed to upload attachments:", uploadError);
+            setAttachmentErrors([`Failed to upload attachments: ${uploadError.message}`]);
+            setIsSubmitting(false);
           }
+        } else {
+          onClose(); // No attachments, close immediately
         }
       }
-
-      onClose();
     } catch (error) {
       console.error("Error saving task:", error);
       alert("Failed to save task. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -207,11 +220,27 @@ const TaskForm = ({ task, onClose }) => {
         <FormGroup>
           <Label htmlFor="attachments">Attachments</Label>
           <AttachmentManager
-            taskId={task?._id || null}
-            existingAttachments={attachments}
-            onAttachmentsChange={setAttachments}
+            ref={attachmentManagerRef}
+            taskId={task?._id}
+            boardId={selectedBoard?._id}
+            existingAttachments={task?.attachments || []}
             disabled={isSubmitting}
           />
+          {attachmentErrors.length > 0 && (
+            <div style={{ 
+              color: '#d32f2f', 
+              fontSize: '14px', 
+              marginTop: '8px',
+              padding: '8px',
+              backgroundColor: '#ffebee',
+              border: '1px solid #ffcdd2',
+              borderRadius: '4px'
+            }}>
+              {attachmentErrors.map((error, index) => (
+                <div key={index}>{error}</div>
+              ))}
+            </div>
+          )}
         </FormGroup>
 
         <FormActions>

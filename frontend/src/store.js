@@ -616,6 +616,87 @@ export const useStore = create((set, get) => ({
       set({ error, loading: false });
     }
   },
+
+  
+  // Optimistically update task attachments after successful upload
+  updateTaskAttachments: (boardId, taskId, newAttachment) => {
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task._id === taskId
+          ? { ...task, attachments: [...(task.attachments || []), newAttachment] }
+          : task
+      ),
+      boards: state.boards.map((board) =>
+        board._id === boardId
+          ? {
+              ...board,
+              columns: board.columns.map((column) => ({
+                ...column,
+                tasks: column.tasks.map((task) =>
+                  task._id === taskId
+                    ? { ...task, attachments: [...(task.attachments || []), newAttachment] }
+                    : task
+                ),
+              })),
+            }
+          : board
+      ),
+      selectedBoard:
+        state.selectedBoard && state.selectedBoard._id === boardId
+          ? {
+              ...state.selectedBoard,
+              columns: state.selectedBoard.columns.map((column) => ({
+                ...column,
+                tasks: column.tasks.map((task) =>
+                  task._id === taskId
+                    ? { ...task, attachments: [...(task.attachments || []), newAttachment] }
+                    : task
+                ),
+              })),
+            }
+          : state.selectedBoard,
+    }));
+  },
+
+  // Remove attachment from task (for rollback on upload failure)
+  removeTaskAttachment: (boardId, taskId, attachmentId) => {
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task._id === taskId
+          ? { ...task, attachments: (task.attachments || []).filter(att => att.id !== attachmentId) }
+          : task
+      ),
+      boards: state.boards.map((board) =>
+        board._id === boardId
+          ? {
+              ...board,
+              columns: board.columns.map((column) => ({
+                ...column,
+                tasks: column.tasks.map((task) =>
+                  task._id === taskId
+                    ? { ...task, attachments: (task.attachments || []).filter(att => att.id !== attachmentId) }
+                    : task
+                ),
+              })),
+            }
+          : board
+      ),
+      selectedBoard:
+        state.selectedBoard && state.selectedBoard._id === boardId
+          ? {
+              ...state.selectedBoard,
+              columns: state.selectedBoard.columns.map((column) => ({
+                ...column,
+                tasks: column.tasks.map((task) =>
+                  task._id === taskId
+                    ? { ...task, attachments: (task.attachments || []).filter(att => att.id !== attachmentId) }
+                    : task
+                ),
+              })),
+            }
+          : state.selectedBoard,
+    }));
+  },
   moveTask: async (taskId, destColumnId, projectId, boardId) => {
     const state = get();
     
