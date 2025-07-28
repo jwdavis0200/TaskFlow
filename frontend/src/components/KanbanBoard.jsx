@@ -17,6 +17,10 @@ const BoardContainer = styled.div`
   box-sizing: border-box;
   flex: 1;
   overflow: hidden;
+  
+  @media (hover: none) and (pointer: coarse) {
+    margin-bottom: 44px;
+  }
 `;
 
 const Header = styled.div`
@@ -60,7 +64,7 @@ const AddTaskButton = styled.button`
     transform: translateY(0);
   }
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     padding: 10px 16px;
     font-size: 12px;
   }
@@ -74,7 +78,7 @@ const ColumnsContainer = styled.div`
   overflow-x: auto;
   padding: 10px 0;
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 16px;
   }

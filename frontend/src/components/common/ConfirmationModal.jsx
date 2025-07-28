@@ -80,7 +80,7 @@ const ConfirmationActions = styled.div`
   justify-content: flex-end;
   margin-top: 8px;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     flex-direction: column-reverse;
     gap: 10px;
   }

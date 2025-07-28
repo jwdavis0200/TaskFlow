@@ -18,7 +18,7 @@ const ModalOverlay = styled.div`
   box-sizing: border-box;
   overflow-y: auto;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     align-items: center;
     padding: 2vh 0;
   }
@@ -48,7 +48,7 @@ const ModalContent = styled.div`
     }
   }
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     max-height: 80vh;
     margin: 10vh 2%;
     width: 96%;

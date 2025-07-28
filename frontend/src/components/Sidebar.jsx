@@ -24,11 +24,11 @@ const SidebarContainer = styled.div`
   display: flex;
   flex-direction: column;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     position: fixed;
     width: 320px;
     transform: translateX(${props => props.isOpen ? '0' : '-100%'});
-    padding: 20px;
+    margin-bottom: 44px;
     border-right: 1px solid #e2e8f0;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   }
@@ -152,7 +152,7 @@ const SidebarTitle = styled.h2`
 const SidebarContent = styled.div`
   flex: 1;
   overflow-y: auto;
-`;
+`;;;;;;
 
 const TitleIcon = styled.span`
   font-size: 24px;

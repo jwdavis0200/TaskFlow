@@ -116,7 +116,7 @@ const ActionSection = styled.div`
   position: relative;
   z-index: 1;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     flex-direction: column;
     gap: 12px;
   }

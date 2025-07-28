@@ -8,7 +8,7 @@ export const FormContainer = styled.div`
   flex-direction: column;
   height: 100%;
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     max-height: 100%;
   }
 `;
@@ -33,7 +33,7 @@ export const FormBody = styled.form`
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     padding: 16px;
   }
 `;
@@ -49,10 +49,6 @@ export const FormContent = styled.div`
   width: 100%;
   box-sizing: border-box;
   padding-right: 4px;
-
-  @media (max-width: 768px) {
-    padding-right: 0;
-  }
 `;
 
 export const Label = styled.label`
@@ -151,7 +147,7 @@ export const FormActions = styled.div`
   background: white;
   margin-top: auto;
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     padding: 16px;
     flex-direction: column-reverse;
     gap: 8px;
@@ -168,7 +164,7 @@ export const Button = styled.button`
   transition: all 0.3s ease;
   min-width: 100px;
 
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     padding: 16px 24px;
     font-size: 16px;
     min-width: auto;

@@ -20,7 +20,7 @@ const ColumnContainer = styled.div`
   word-wrap: break-word;
   overflow-wrap: break-word;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     max-width: calc(100vw - 40px);
     width: 100%;
     box-sizing: border-box;
@@ -62,7 +62,7 @@ const ColumnTitle = styled.h3`
   hyphens: auto;
   max-width: 100%;
   
-  @media (max-width: 768px) {
+  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
     font-size: 16px;
     line-height: 1.2;
   }
