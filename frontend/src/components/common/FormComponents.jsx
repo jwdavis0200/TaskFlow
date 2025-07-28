@@ -45,6 +45,7 @@ export const FormGroup = styled.div`
 export const FormContent = styled.div`
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
   padding-right: 4px;
