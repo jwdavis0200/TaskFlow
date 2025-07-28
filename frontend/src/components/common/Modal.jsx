@@ -49,12 +49,14 @@ const ModalContent = styled.div`
   }
 
   @media (max-width: 768px) {
-    max-height: 92vh;
-    margin: 4vh 5%;
-    width: 90%;
+    max-height: 80vh;
+    margin: 10vh 2%;
+    width: 96%;
     max-width: none;
     min-width: 0;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Ensure scrolling works properly */

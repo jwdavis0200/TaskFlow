@@ -4,6 +4,13 @@ export const FormContainer = styled.div`
   background: white;
   border-radius: 16px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  @media (max-width: 768px) {
+    max-height: 100%;
+  }
 `;
 
 export const FormHeader = styled.div`
@@ -21,10 +28,30 @@ export const FormTitle = styled.h2`
 
 export const FormBody = styled.form`
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 export const FormGroup = styled.div`
   margin-bottom: 16px;
+`;
+
+export const FormContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4px;
+
+  @media (max-width: 768px) {
+    padding-right: 0;
+  }
 `;
 
 export const Label = styled.label`
@@ -118,8 +145,16 @@ export const FormActions = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding-top: 16px;
+  padding: 16px 20px;
   border-top: 1px solid #eee;
+  background: white;
+  margin-top: auto;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
 `;
 
 export const Button = styled.button`
@@ -131,6 +166,13 @@ export const Button = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 100px;
+
+  @media (max-width: 768px) {
+    padding: 16px 24px;
+    font-size: 16px;
+    min-width: auto;
+    width: 100%;
+  }
 
   &:hover {
     transform: translateY(-1px);

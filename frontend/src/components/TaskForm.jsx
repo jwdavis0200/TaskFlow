@@ -6,6 +6,7 @@ import {
   FormHeader,
   FormTitle,
   FormBody,
+  FormContent,
   FormGroup,
   Label,
   Input,
@@ -150,7 +151,8 @@ const TaskForm = ({ task, onClose }) => {
       </FormHeader>
 
       <FormBody onSubmit={handleSubmit}>
-        <FormGroup>
+        <FormContent>
+          <FormGroup>
           <Label htmlFor="title">Title *</Label>
           <Input
             type="text"
@@ -242,6 +244,7 @@ const TaskForm = ({ task, onClose }) => {
             </div>
           )}
         </FormGroup>
+        </FormContent>
 
         <FormActions>
           <SecondaryButton type="button" onClick={onClose}>
