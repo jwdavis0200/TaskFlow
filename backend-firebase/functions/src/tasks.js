@@ -137,7 +137,7 @@ exports.createTask = onCall(async (request) => {
  */
 exports.updateTask = onCall(async (request) => {
   const userId = validateAuth(request);
-  const { taskId, updates } = request.data;
+  const { taskId, updates, expectedVersion } = request.data;
   
   if (!taskId) {
     throw new HttpsError('invalid-argument', 'Task ID is required');
@@ -156,6 +156,16 @@ exports.updateTask = onCall(async (request) => {
     // Validate user has permission to edit tasks
     const taskData = taskDoc.data();
     await validateProjectPermission(db, taskData.projectId, userId, PERMISSIONS.EDIT_TASKS);
+    
+    // Conflict detection: Check if task was modified since client last saw it
+    if (expectedVersion && taskData.updatedAt) {
+      const serverVersion = taskData.updatedAt.toMillis();
+      const clientVersion = new Date(expectedVersion).getTime();
+      
+      if (serverVersion > clientVersion) {
+        throw new HttpsError('failed-precondition', 'Task was modified by another user. Please refresh and try again.');
+      }
+    }
     
     // Prepare update data with proper timestamp handling
     const updateData = { ...updates };

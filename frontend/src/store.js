@@ -22,12 +22,129 @@ import {
   removeProjectMemberSecureAPI,
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
+import toast from 'react-hot-toast';
 
 // Helper function to format column name for display
 const formatColumnForDisplay = (columnName) => {
   return columnName.split('-').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ');
+};
+
+// Helper function to safely create Date objects
+const safeCreateDate = (dateValue) => {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  return isNaN(date.getTime()) ? null : date;
+};
+
+// Utility function for exponential backoff retry
+const retryOperation = async (operation, maxRetries = 3, initialDelay = 1000) => {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      // Don't retry on certain error types
+      if (error.code === 'permission-denied' || 
+          error.code === 'not-found' || 
+          error.code === 'invalid-argument') {
+        throw error;
+      }
+      
+      // Don't retry on the last attempt
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = initialDelay * Math.pow(2, attempt) + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+};
+
+// Helper function to handle errors and show appropriate toasts
+const handleErrorWithToast = (error, operation = 'operation') => {
+  console.error(`Error during ${operation}:`, error);
+  
+  // Handle different types of errors
+  if (error.code === 'failed-precondition') {
+    toast.error('Task was modified by another user. Board will refresh with latest data.', {
+      duration: 5000,
+    });
+  } else if (error.code === 'permission-denied') {
+    toast.error('You don\'t have permission to perform this action.');
+  } else if (error.code === 'not-found') {
+    toast.error('The item you\'re trying to access no longer exists.');
+  } else if (error.code === 'invalid-argument') {
+    toast.error('Invalid data provided. Please check your input and try again.');
+  } else if (error.code === 'unauthenticated') {
+    toast.error('You need to sign in to perform this action.');
+  } else if (error.message?.includes('network')) {
+    toast.error('Network error. Please check your connection and try again.');
+  } else {
+    // Generic error message
+    const message = error.message || `Failed to ${operation}`;
+    toast.error(message);
+  }
+};
+
+// Helper function to validate optimistic updates against server response
+const validateOptimisticUpdate = (optimisticState, serverResponse, taskId) => {
+  // Find the task in the optimistic state (could be in boards or tasks array)
+  let optimisticTask = null;
+  
+  // First try to find in boards array (primary source of truth)
+  for (const board of optimisticState.boards) {
+    for (const column of board.columns) {
+      const foundTask = column.tasks?.find(task => task._id === taskId);
+      if (foundTask) {
+        optimisticTask = foundTask;
+        break;
+      }
+    }
+    if (optimisticTask) break;
+  }
+  
+  // Fallback to tasks array if not found in boards
+  if (!optimisticTask) {
+    optimisticTask = optimisticState.tasks.find(task => task._id === taskId);
+  }
+  
+  if (!optimisticTask || !serverResponse) {
+    return false;
+  }
+  
+  // Compare key fields that matter for optimistic updates
+  // For moveTask, columnId is the most important
+  // For other updates, title and priority matter too
+  const columnMatches = optimisticTask.columnId === serverResponse.columnId;
+  const titleMatches = !serverResponse.title || optimisticTask.title === serverResponse.title;
+  const priorityMatches = !serverResponse.priority || optimisticTask.priority === serverResponse.priority;
+  
+  // Debug logging for failed validations
+  if (!columnMatches || !titleMatches || !priorityMatches) {
+    console.warn('Optimistic update validation details:', {
+      taskId,
+      optimisticColumnId: optimisticTask.columnId,
+      serverColumnId: serverResponse.columnId,
+      columnMatches,
+      optimisticTitle: optimisticTask.title,
+      serverTitle: serverResponse.title,
+      titleMatches,
+      optimisticPriority: optimisticTask.priority,
+      serverPriority: serverResponse.priority,
+      priorityMatches
+    });
+  }
+  
+  return columnMatches && titleMatches && priorityMatches;
 };
 
 export const useStore = create((set, get) => ({
@@ -174,7 +291,7 @@ export const useStore = create((set, get) => ({
         set({ projects: projectsWithBoards, loading: false });
       }
     } catch (error) {
-      console.error("Store: Error fetching projects:", error);
+      handleErrorWithToast(error, 'load projects');
       set({ error, loading: false });
     }
   },
@@ -188,9 +305,10 @@ export const useStore = create((set, get) => ({
       // Firebase function returns {projectId, boardId}, so reload projects to get full data
       await get().loadProjects();
       
+      toast.success('Project created successfully!');
       set({ loading: false });
     } catch (error) {
-      console.error('Store: Error creating project:', error);
+      handleErrorWithToast(error, 'create project');
       set({ error, loading: false });
     }
   },
@@ -208,7 +326,9 @@ export const useStore = create((set, get) => ({
             : state.selectedProject,
         loading: false,
       }));
+      toast.success('Project updated successfully!');
     } catch (error) {
+      handleErrorWithToast(error, 'update project');
       set({ error, loading: false });
     }
   },
@@ -224,7 +344,9 @@ export const useStore = create((set, get) => ({
             : state.selectedProject,
         loading: false,
       }));
+      toast.success('Project deleted successfully!');
     } catch (error) {
+      handleErrorWithToast(error, 'delete project');
       set({ error, loading: false });
     }
   },
@@ -256,15 +378,17 @@ export const useStore = create((set, get) => ({
           ...column,
           _id: column.id,
           // Normalize tasks and keep them in their current column
-          tasks: (column.tasks || []).map((task, index) => ({
-            ...task,
-            _id: task.id || task._id || `task-${column.id}-${index}`,
-            // Convert ISO strings back to Date objects for consistent frontend handling
-            dueDate: task.dueDate ? new Date(task.dueDate) : null,
-            createdAt: task.createdAt ? new Date(task.createdAt) : null,
-            updatedAt: task.updatedAt ? new Date(task.updatedAt) : null,
-            column: column.id
-          }))
+          tasks: (column.tasks || []).map((task, index) => {
+            return {
+              ...task,
+              _id: task.id || task._id || `task-${column.id}-${index}`,
+              // Convert ISO strings back to Date objects for consistent frontend handling
+              dueDate: safeCreateDate(task.dueDate),
+              createdAt: safeCreateDate(task.createdAt),
+              updatedAt: safeCreateDate(task.updatedAt),
+              column: column.id
+            };
+          })
         }));
 
         return {
@@ -429,32 +553,37 @@ export const useStore = create((set, get) => ({
     try {
       const tasks = await fetchTasks(projectId, boardId, columnId);
       // Apply proper date conversion - backend now returns ISO strings
-      const tasksWithConvertedDates = tasks.map(task => ({
-        ...task,
-        _id: task.id || task._id,
-        // Convert ISO strings back to Date objects
-        dueDate: task.dueDate ? new Date(task.dueDate) : null,
-        createdAt: task.createdAt ? new Date(task.createdAt) : null,
-        updatedAt: task.updatedAt ? new Date(task.updatedAt) : null
-      }));
+      const tasksWithConvertedDates = tasks.map(task => {
+        return {
+          ...task,
+          _id: task.id || task._id,
+          // Convert ISO strings back to Date objects
+          dueDate: safeCreateDate(task.dueDate),
+          createdAt: safeCreateDate(task.createdAt),
+          updatedAt: safeCreateDate(task.updatedAt)
+        };
+      });
       set({ tasks: tasksWithConvertedDates, loading: false });
     } catch (error) {
+      handleErrorWithToast(error, 'load tasks');
       set({ error, loading: false });
     }
   },
   addTask: async (projectId, boardId, columnId, taskData) => {
     set({ loading: true, error: null });
     try {
-      const newTask = await createTask(projectId, boardId, columnId, taskData);
+      const newTask = await retryOperation(async () => {
+        return await createTask(projectId, boardId, columnId, taskData);
+      });
       
       // Firebase functions now return ISO strings for dates, convert to Date objects
       const normalizedTask = {
         ...newTask,
         _id: newTask.id,
         // Convert ISO strings back to Date objects for consistent frontend handling
-        dueDate: newTask.dueDate ? new Date(newTask.dueDate) : null,
-        createdAt: newTask.createdAt ? new Date(newTask.createdAt) : null,
-        updatedAt: newTask.updatedAt ? new Date(newTask.updatedAt) : null
+        dueDate: safeCreateDate(newTask.dueDate),
+        createdAt: safeCreateDate(newTask.createdAt),
+        updatedAt: safeCreateDate(newTask.updatedAt)
       };
       
       console.log("Store: Task created successfully:", normalizedTask);
@@ -487,10 +616,11 @@ export const useStore = create((set, get) => ({
         loading: false,
       }));
       
+      toast.success('Task created successfully!');
       return normalizedTask; // Return the created task
     } catch (error) {
-      console.error("Store: Error creating task:", error);
-      set({ error, loading: false });
+      handleErrorWithToast(error, 'create task');
+      set({ loading: false });
     }
   },
   updateTask: async (projectId, boardId, columnId, taskId, taskData) => {
@@ -504,14 +634,65 @@ export const useStore = create((set, get) => ({
     });
 
     try {
-      // 1. Call the API to update the task on the backend
-      const updatedTask = await updateTaskAPI(
-        projectId,
-        boardId,
-        columnId,
-        taskId,
-        taskData
-      );
+      // Get current task data for conflict detection
+      const state = get();
+      let currentTask = null;
+      
+      // Find the current task in the state
+      for (const board of state.boards) {
+        if (board._id === boardId) {
+          for (const column of board.columns) {
+            const foundTask = column.tasks?.find(task => task._id === taskId);
+            if (foundTask) {
+              currentTask = foundTask;
+              break;
+            }
+          }
+          break;
+        }
+      }
+
+      // Helper function to safely get ISO string from updatedAt
+      const getExpectedVersion = (task) => {
+        if (!task?.updatedAt) return null;
+        
+        try {
+          // If it's already a Date object, validate it first
+          if (task.updatedAt instanceof Date) {
+            // Check if the Date object is valid before calling toISOString()
+            if (isNaN(task.updatedAt.getTime())) {
+              console.warn('Invalid Date object in updateTask:', task.updatedAt);
+              return null;
+            }
+            return task.updatedAt.toISOString();
+          }
+          // If it's a string, validate it's a proper ISO string
+          if (typeof task.updatedAt === 'string') {
+            const date = new Date(task.updatedAt);
+            if (!isNaN(date.getTime())) {
+              return date.toISOString();
+            }
+          }
+          return null;
+        } catch (error) {
+          console.warn('Invalid updatedAt format:', task.updatedAt, error);
+          return null;
+        }
+      };
+
+      const expectedVersion = getExpectedVersion(currentTask);
+
+      // 1. Call the API to update the task on the backend with retry logic
+      const updatedTask = await retryOperation(async () => {
+        return await updateTaskAPI(
+          projectId,
+          boardId,
+          columnId,
+          taskId,
+          taskData,
+          expectedVersion
+        );
+      });
 
       console.log("Store updateTask: API response", updatedTask);
 
@@ -549,9 +730,9 @@ export const useStore = create((set, get) => ({
             ...updatedTask,
             _id: updatedTask.id,
             // Convert ISO strings back to Date objects for consistent frontend handling
-            createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt) : null,
-            updatedAt: updatedTask.updatedAt ? new Date(updatedTask.updatedAt) : null,
-            dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate) : null
+            createdAt: safeCreateDate(updatedTask.createdAt),
+            updatedAt: safeCreateDate(updatedTask.updatedAt),
+            dueDate: safeCreateDate(updatedTask.dueDate)
           };
           // Add the task to the new column
           newColumn.tasks.push(normalizedTask);
@@ -576,15 +757,29 @@ export const useStore = create((set, get) => ({
           loading: false,
         };
       });
+      
+      toast.success('Task updated successfully!');
     } catch (error) {
-      console.error("Failed to update task:", error);
-      set({ error, loading: false });
+      handleErrorWithToast(error, 'update task');
+      
+      // Handle conflict errors specially
+      if (error.code === 'failed-precondition') {
+        // Refresh the board data to get latest state
+        const { loadBoards } = get();
+        await loadBoards(projectId);
+        set({ loading: false });
+        return;
+      }
+      
+      set({ loading: false });
     }
   },
   deleteTask: async (projectId, boardId, columnId, taskId) => {
     set({ loading: true, error: null });
     try {
-      await deleteTask(taskId);
+      await retryOperation(async () => {
+        return await deleteTask(taskId);
+      });
       set((state) => ({
         tasks: state.tasks.filter((task) => task._id !== taskId),
         boards: state.boards.map((board) =>
@@ -613,7 +808,16 @@ export const useStore = create((set, get) => ({
         loading: false,
       }));
     } catch (error) {
-      set({ error, loading: false });
+      // Handle specific error cases
+      if (error.code === 'not-found') {
+        // Task was already deleted by another user, just update UI
+        toast.success('Task was already deleted.');
+        set({ loading: false });
+        return;
+      }
+      
+      handleErrorWithToast(error, 'delete task');
+      set({ loading: false });
     }
   },
 
@@ -768,7 +972,7 @@ export const useStore = create((set, get) => ({
             // Add task to destination column
             return {
               ...column,
-              tasks: [...(column.tasks || []), { ...taskToMove, column: destColumnId }]
+              tasks: [...(column.tasks || []), { ...taskToMove, columnId: destColumnId }]
             };
           }
           return column;
@@ -789,16 +993,74 @@ export const useStore = create((set, get) => ({
     });
 
     try {
-      // Update task on backend with column only
-      await updateTaskAPI(projectId, boardId, sourceColumnId, taskId, {
-        columnId: destColumnId
+      // Get expected version safely
+      const getExpectedVersion = (task) => {
+        if (!task?.updatedAt) return null;
+        
+        try {
+          if (task.updatedAt instanceof Date) {
+            // Check if the Date object is valid before calling toISOString()
+            if (isNaN(task.updatedAt.getTime())) {
+              console.warn('Invalid Date object in moveTask:', task.updatedAt);
+              return null;
+            }
+            return task.updatedAt.toISOString();
+          }
+          if (typeof task.updatedAt === 'string') {
+            const date = new Date(task.updatedAt);
+            if (!isNaN(date.getTime())) {
+              return date.toISOString();
+            }
+          }
+          return null;
+        } catch (error) {
+          console.warn('Invalid updatedAt format in moveTask:', task.updatedAt, error);
+          return null;
+        }
+      };
+
+      // Update task on backend with column only, using retry logic
+      const serverResponse = await retryOperation(async () => {
+        return await updateTaskAPI(
+          projectId, 
+          boardId, 
+          sourceColumnId, 
+          taskId, 
+          { columnId: destColumnId },
+          getExpectedVersion(taskToMove)
+        );
       });
+      
+      // Validate optimistic update against server response
+      const currentState = get();
+      const isValidOptimisticUpdate = validateOptimisticUpdate(
+        currentState, 
+        serverResponse, 
+        taskId
+      );
+      
+      if (!isValidOptimisticUpdate) {
+        console.warn('Optimistic update validation failed for moveTask, refreshing board data');
+        console.log('Expected columnId:', destColumnId, 'Server response:', serverResponse);
+        // Refresh board data to ensure consistency
+        const { loadBoards } = get();
+        await loadBoards(projectId);
+      }
       
       // Clear drag state on success
       set({ isDragInProgress: false });
     } catch (error) {
-      console.error('Failed to move task:', error);
-      set({ error });
+      // Check if it's a conflict error
+      if (error.code === 'failed-precondition') {
+        // Refresh the board data to get latest state
+        const { loadBoards } = get();
+        await loadBoards(projectId);
+        handleErrorWithToast(error, 'move task');
+        set({ isDragInProgress: false });
+        return;
+      }
+      
+      handleErrorWithToast(error, 'move task');
       
       // Revert optimistic update on failure
       set((state) => {
@@ -895,9 +1157,10 @@ export const useStore = create((set, get) => ({
     try {
       const result = await inviteUserToProjectAPI(projectId, email, role);
       set({ collaborationLoading: false });
+      toast.success(`Invitation sent to ${email}!`);
       return result;
     } catch (error) {
-      console.error('Store: Error inviting user:', error);
+      handleErrorWithToast(error, 'invite user to project');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -924,8 +1187,9 @@ export const useStore = create((set, get) => ({
         projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
         collaborationLoading: false
       }));
+      toast.success('Member removed from project.');
     } catch (error) {
-      console.error('Store: Error removing member:', error);
+      handleErrorWithToast(error, 'remove project member');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -937,7 +1201,7 @@ export const useStore = create((set, get) => ({
       const invitations = await getMyInvitationsAPI();
       set({ invitations, collaborationLoading: false });
     } catch (error) {
-      console.error('Store: Error loading invitations:', error);
+      handleErrorWithToast(error, 'load invitations');
       set({ error, collaborationLoading: false });
     }
   },
@@ -956,9 +1220,10 @@ export const useStore = create((set, get) => ({
       // Reload projects to include the new project
       await get().loadProjects();
       
+      toast.success('Invitation accepted! Project added to your workspace.');
       return result;
     } catch (error) {
-      console.error('Store: Error accepting invitation:', error);
+      handleErrorWithToast(error, 'accept invitation');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -976,9 +1241,10 @@ export const useStore = create((set, get) => ({
         collaborationLoading: false
       }));
       
+      toast.success('Invitation declined.');
       return result;
     } catch (error) {
-      console.error('Store: Error declining invitation:', error);
+      handleErrorWithToast(error, 'decline invitation');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -997,7 +1263,7 @@ export const useStore = create((set, get) => ({
       const members = await getProjectMembersAPI(projectId, project.members);
       set({ projectMembers: members, collaborationLoading: false });
     } catch (error) {
-      console.error('Store: Error loading project members:', error);
+      handleErrorWithToast(error, 'load project members');
       set({ error, collaborationLoading: false });
     }
   },
@@ -1035,9 +1301,10 @@ export const useStore = create((set, get) => ({
         };
       });
       
+      toast.success('User role updated successfully!');
       return result;
     } catch (error) {
-      console.error('Store: Error changing user role:', error);
+      handleErrorWithToast(error, 'change user role');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1073,8 +1340,9 @@ export const useStore = create((set, get) => ({
         projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
         collaborationLoading: false
       }));
+      toast.success('Member removed from project.');
     } catch (error) {
-      console.error('Store: Error removing member (secure):', error);
+      handleErrorWithToast(error, 'remove project member');
       set({ error, collaborationLoading: false });
       throw error;
     }

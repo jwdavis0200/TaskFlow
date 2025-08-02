@@ -105,10 +105,18 @@ export const updateTask = async (
   boardId,
   columnId,
   taskId,
-  taskData
+  taskData,
+  expectedVersion = null
 ) => {
   const updateTask = httpsCallable(functions, 'updateTask');
-  const result = await updateTask({ taskId, updates: taskData });
+  const payload = { taskId, updates: taskData };
+  
+  // Add expectedVersion for conflict detection if provided
+  if (expectedVersion) {
+    payload.expectedVersion = expectedVersion;
+  }
+  
+  const result = await updateTask(payload);
   return result.data;
 };
 
