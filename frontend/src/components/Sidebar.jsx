@@ -28,7 +28,7 @@ const SidebarContainer = styled.div`
     position: fixed;
     width: 320px;
     transform: translateX(${props => props.isOpen ? '0' : '-100%'});
-    margin-bottom: 44px;
+    padding-bottom: 64px;
     border-right: 1px solid #e2e8f0;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   }
