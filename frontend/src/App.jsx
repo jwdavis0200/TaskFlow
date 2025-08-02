@@ -151,34 +151,16 @@ function App() {
         </ModalOverlay>
       )}
       
-      {/* Toast notifications */}
-      <Toaster
-        position="top-right"
+      {/* Toast notifications - using our custom toast system */}
+      <Toaster 
         toastOptions={{
-          duration: 4000,
-          style: {
-            background: 'rgba(255, 255, 255, 0.95)',
-            color: '#333',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '12px',
-            padding: '16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#4CAF50',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#f44336',
-              secondary: '#fff',
-            },
-            duration: 6000, // Error messages stay longer
-          },
+          position: 'bottom-center',
         }}
+        containerStyle={{
+          bottom: 10,
+        }}
+        gutter={8}
+        reverseOrder={false}
       />
     </>
   );

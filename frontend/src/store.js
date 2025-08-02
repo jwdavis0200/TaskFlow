@@ -22,7 +22,7 @@ import {
   removeProjectMemberSecureAPI,
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
-import toast from 'react-hot-toast';
+import { toastService } from './components/toast/toastService.jsx';
 
 // Helper function to format column name for display
 const formatColumnForDisplay = (columnName) => {
@@ -69,31 +69,6 @@ const retryOperation = async (operation, maxRetries = 3, initialDelay = 1000) =>
   throw lastError;
 };
 
-// Helper function to handle errors and show appropriate toasts
-const handleErrorWithToast = (error, operation = 'operation') => {
-  console.error(`Error during ${operation}:`, error);
-  
-  // Handle different types of errors
-  if (error.code === 'failed-precondition') {
-    toast.error('Task was modified by another user. Board will refresh with latest data.', {
-      duration: 5000,
-    });
-  } else if (error.code === 'permission-denied') {
-    toast.error('You don\'t have permission to perform this action.');
-  } else if (error.code === 'not-found') {
-    toast.error('The item you\'re trying to access no longer exists.');
-  } else if (error.code === 'invalid-argument') {
-    toast.error('Invalid data provided. Please check your input and try again.');
-  } else if (error.code === 'unauthenticated') {
-    toast.error('You need to sign in to perform this action.');
-  } else if (error.message?.includes('network')) {
-    toast.error('Network error. Please check your connection and try again.');
-  } else {
-    // Generic error message
-    const message = error.message || `Failed to ${operation}`;
-    toast.error(message);
-  }
-};
 
 // Helper function to validate optimistic updates against server response
 const validateOptimisticUpdate = (optimisticState, serverResponse, taskId) => {
@@ -291,7 +266,7 @@ export const useStore = create((set, get) => ({
         set({ projects: projectsWithBoards, loading: false });
       }
     } catch (error) {
-      handleErrorWithToast(error, 'load projects');
+      toastService.handleError(error, 'load projects');
       set({ error, loading: false });
     }
   },
@@ -305,10 +280,10 @@ export const useStore = create((set, get) => ({
       // Firebase function returns {projectId, boardId}, so reload projects to get full data
       await get().loadProjects();
       
-      toast.success('Project created successfully!');
+      toastService.success('Project created successfully!');
       set({ loading: false });
     } catch (error) {
-      handleErrorWithToast(error, 'create project');
+      toastService.handleError(error, 'create project');
       set({ error, loading: false });
     }
   },
@@ -326,9 +301,9 @@ export const useStore = create((set, get) => ({
             : state.selectedProject,
         loading: false,
       }));
-      toast.success('Project updated successfully!');
+      toastService.success('Project updated successfully!');
     } catch (error) {
-      handleErrorWithToast(error, 'update project');
+      toastService.handleError(error, 'update project');
       set({ error, loading: false });
     }
   },
@@ -344,9 +319,9 @@ export const useStore = create((set, get) => ({
             : state.selectedProject,
         loading: false,
       }));
-      toast.success('Project deleted successfully!');
+      toastService.success('Project deleted successfully!');
     } catch (error) {
-      handleErrorWithToast(error, 'delete project');
+      toastService.handleError(error, 'delete project');
       set({ error, loading: false });
     }
   },
@@ -417,6 +392,7 @@ export const useStore = create((set, get) => ({
       await loadProjects();
       
       set({ loading: false });
+      toastService.success('Board created successfully!');
     } catch (error) {
       console.error("Store: Error creating board:", error);
       set({ error, loading: false });
@@ -437,7 +413,9 @@ export const useStore = create((set, get) => ({
             : state.selectedBoard,
         loading: false,
       }));
+      toastService.success('Board updated successfully!');
     } catch (error) {
+      toastService.handleError(error, 'update board');
       set({ error, loading: false });
     }
   },
@@ -459,7 +437,9 @@ export const useStore = create((set, get) => ({
           state.selectedBoard?._id === boardId ? null : state.selectedBoard,
         loading: false,
       }));
+      toastService.success('Board deleted successfully!');
     } catch (error) {
+      toastService.handleError(error, 'delete board');
       set({ error, loading: false });
     }
   },
@@ -495,7 +475,9 @@ export const useStore = create((set, get) => ({
         ),
         loading: false,
       }));
+      toastService.success('Column added successfully!');
     } catch (error) {
+      toastService.handleError(error, 'add column');
       set({ error, loading: false });
     }
   },
@@ -521,7 +503,9 @@ export const useStore = create((set, get) => ({
         ),
         loading: false,
       }));
+      toastService.success('Column updated successfully!');
     } catch (error) {
+      toastService.handleError(error, 'update column');
       set({ error, loading: false });
     }
   },
@@ -542,7 +526,9 @@ export const useStore = create((set, get) => ({
         ),
         loading: false,
       }));
+      toastService.success('Column deleted successfully!');
     } catch (error) {
+      toastService.handleError(error, 'delete column');
       set({ error, loading: false });
     }
   },
@@ -565,7 +551,7 @@ export const useStore = create((set, get) => ({
       });
       set({ tasks: tasksWithConvertedDates, loading: false });
     } catch (error) {
-      handleErrorWithToast(error, 'load tasks');
+      toastService.handleError(error, 'load tasks');
       set({ error, loading: false });
     }
   },
@@ -616,10 +602,10 @@ export const useStore = create((set, get) => ({
         loading: false,
       }));
       
-      toast.success('Task created successfully!');
+      toastService.success('Task created successfully!');
       return normalizedTask; // Return the created task
     } catch (error) {
-      handleErrorWithToast(error, 'create task');
+      toastService.handleError(error, 'create task');
       set({ loading: false });
     }
   },
@@ -758,9 +744,9 @@ export const useStore = create((set, get) => ({
         };
       });
       
-      toast.success('Task updated successfully!');
+      toastService.success('Task updated successfully!');
     } catch (error) {
-      handleErrorWithToast(error, 'update task');
+      toastService.handleError(error, 'update task');
       
       // Handle conflict errors specially
       if (error.code === 'failed-precondition') {
@@ -807,16 +793,18 @@ export const useStore = create((set, get) => ({
             : state.selectedBoard,
         loading: false,
       }));
+      
+      toastService.success('Task deleted successfully!');
     } catch (error) {
       // Handle specific error cases
       if (error.code === 'not-found') {
         // Task was already deleted by another user, just update UI
-        toast.success('Task was already deleted.');
+        toastService.success('Task was already deleted.');
         set({ loading: false });
         return;
       }
       
-      handleErrorWithToast(error, 'delete task');
+      toastService.handleError(error, 'delete task');
       set({ loading: false });
     }
   },
@@ -1055,12 +1043,12 @@ export const useStore = create((set, get) => ({
         // Refresh the board data to get latest state
         const { loadBoards } = get();
         await loadBoards(projectId);
-        handleErrorWithToast(error, 'move task');
+        toastService.handleError(error, 'move task');
         set({ isDragInProgress: false });
         return;
       }
       
-      handleErrorWithToast(error, 'move task');
+      toastService.handleError(error, 'move task');
       
       // Revert optimistic update on failure
       set((state) => {
@@ -1157,10 +1145,10 @@ export const useStore = create((set, get) => ({
     try {
       const result = await inviteUserToProjectAPI(projectId, email, role);
       set({ collaborationLoading: false });
-      toast.success(`Invitation sent to ${email}!`);
+      toastService.success(`Invitation sent to ${email}!`);
       return result;
     } catch (error) {
-      handleErrorWithToast(error, 'invite user to project');
+      toastService.handleError(error, 'invite user to project');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1187,9 +1175,9 @@ export const useStore = create((set, get) => ({
         projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
         collaborationLoading: false
       }));
-      toast.success('Member removed from project.');
+      toastService.success('Member removed from project.');
     } catch (error) {
-      handleErrorWithToast(error, 'remove project member');
+      toastService.handleError(error, 'remove project member');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1201,7 +1189,7 @@ export const useStore = create((set, get) => ({
       const invitations = await getMyInvitationsAPI();
       set({ invitations, collaborationLoading: false });
     } catch (error) {
-      handleErrorWithToast(error, 'load invitations');
+      toastService.handleError(error, 'load invitations');
       set({ error, collaborationLoading: false });
     }
   },
@@ -1220,10 +1208,10 @@ export const useStore = create((set, get) => ({
       // Reload projects to include the new project
       await get().loadProjects();
       
-      toast.success('Invitation accepted! Project added to your workspace.');
+      toastService.success('Invitation accepted! Project added to your workspace.');
       return result;
     } catch (error) {
-      handleErrorWithToast(error, 'accept invitation');
+      toastService.handleError(error, 'accept invitation');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1241,10 +1229,10 @@ export const useStore = create((set, get) => ({
         collaborationLoading: false
       }));
       
-      toast.success('Invitation declined.');
+      toastService.success('Invitation declined.');
       return result;
     } catch (error) {
-      handleErrorWithToast(error, 'decline invitation');
+      toastService.handleError(error, 'decline invitation');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1263,7 +1251,7 @@ export const useStore = create((set, get) => ({
       const members = await getProjectMembersAPI(projectId, project.members);
       set({ projectMembers: members, collaborationLoading: false });
     } catch (error) {
-      handleErrorWithToast(error, 'load project members');
+      toastService.handleError(error, 'load project members');
       set({ error, collaborationLoading: false });
     }
   },
@@ -1301,10 +1289,10 @@ export const useStore = create((set, get) => ({
         };
       });
       
-      toast.success('User role updated successfully!');
+      toastService.success('User role updated successfully!');
       return result;
     } catch (error) {
-      handleErrorWithToast(error, 'change user role');
+      toastService.handleError(error, 'change user role');
       set({ error, collaborationLoading: false });
       throw error;
     }
@@ -1340,9 +1328,9 @@ export const useStore = create((set, get) => ({
         projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
         collaborationLoading: false
       }));
-      toast.success('Member removed from project.');
+      toastService.success('Member removed from project.');
     } catch (error) {
-      handleErrorWithToast(error, 'remove project member');
+      toastService.handleError(error, 'remove project member');
       set({ error, collaborationLoading: false });
       throw error;
     }
