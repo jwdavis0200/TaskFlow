@@ -24,13 +24,6 @@ import {
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 import { toastService } from './components/toast/toastService.jsx';
 
-// Helper function to format column name for display
-const formatColumnForDisplay = (columnName) => {
-  return columnName.split('-').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-};
-
 // Helper function to safely create Date objects
 const safeCreateDate = (dateValue) => {
   if (!dateValue) return null;
