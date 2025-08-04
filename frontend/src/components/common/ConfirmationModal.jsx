@@ -1,4 +1,3 @@
-import React from "react";
 import styled from "@emotion/styled";
 import { Warning, DeleteOutline, CheckCircle, Info } from '@mui/icons-material';
 import LoadingSpinner from "./LoadingSpinner";

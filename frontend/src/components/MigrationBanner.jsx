@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Rocket } from '@mui/icons-material';
 import { httpsCallable } from 'firebase/functions';

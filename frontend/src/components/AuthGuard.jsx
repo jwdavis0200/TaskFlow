@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { Check, Close } from '@mui/icons-material';
 import { useStore } from "../store";

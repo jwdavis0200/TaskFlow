@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDrag } from "react-dnd";
 import styled from "@emotion/styled";
 import Timer from "./Timer";

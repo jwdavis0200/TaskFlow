@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from '@emotion/styled';
 import { BarChart, Edit, Delete } from '@mui/icons-material';
 import { useStore } from '../store';

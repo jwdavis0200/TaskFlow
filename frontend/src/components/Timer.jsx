@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getTimer, removeTimer } from "../utils/timer";
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
