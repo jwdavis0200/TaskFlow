@@ -32,7 +32,16 @@ export const signIn = async (email, password) => {
     return userCredential.user;
   } catch (error) {
     console.error('Error signing in:', error);
-    throw error;
+    
+    // Return generic messages to prevent user enumeration
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      throw new Error('Invalid email or password');
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error('Too many failed attempts. Try again later');
+    } else if (error.code === 'auth/user-disabled') {
+      throw new Error('Account has been disabled');
+    }
+    throw new Error('Sign in failed. Please try again');
   }
 };
 
@@ -45,7 +54,19 @@ export const signUp = async (email, password) => {
     return userCredential.user;
   } catch (error) {
     console.error('Error signing up:', error);
-    throw error;
+    
+    // Return secure error messages
+    if (error.code === 'auth/email-already-in-use') {
+      // Don't reveal if email exists - generic message
+      throw new Error('Registration failed. Please try again');
+    } else if (error.code === 'auth/weak-password') {
+      throw new Error('Password is too weak. Please choose a stronger password');
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error('Invalid email address');
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error('Too many attempts. Try again later');
+    }
+    throw new Error('Registration failed. Please try again');
   }
 };
 
@@ -88,24 +109,31 @@ export const onAuthStateChange = (callback) => {
  * Send password reset email using Firebase's built-in handling
  */
 export const sendPasswordReset = async (email) => {
+  const standardResponse = { 
+    success: true, 
+    message: 'If an account with that email exists, a password reset email has been sent'
+  };
+  
   try {
     // Firebase handles the complete password reset flow
     await sendPasswordResetEmail(auth, email);
-    return { success: true };
+    return standardResponse;
   } catch (error) {
     console.error('Error sending password reset email:', error);
     
-    // Return user-friendly error messages
-    let message = 'Failed to send password reset email';
-    if (error.code === 'auth/user-not-found') {
-      // For security, don't reveal if user exists
-      message = 'If an account with that email exists, a password reset email has been sent';
-    } else if (error.code === 'auth/invalid-email') {
-      message = 'Invalid email address';
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+      // Return identical response - no way to distinguish from success
+      return standardResponse;
     } else if (error.code === 'auth/too-many-requests') {
-      message = 'Too many reset attempts. Please try again later';
+      return { 
+        success: false, 
+        error: 'Too many reset attempts. Please try again later' 
+      };
     }
     
-    return { success: false, error: message };
+    return { 
+      success: false, 
+      error: 'Failed to send password reset email. Please try again' 
+    };
   }
 };
