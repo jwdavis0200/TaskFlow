@@ -151,16 +151,6 @@ export const inviteUserToProjectAPI = async (projectId, email, role) => {
   }
 };
 
-export const removeProjectMemberAPI = async (projectId, memberUserId) => {
-  try {
-    const removeProjectMember = httpsCallable(functions, 'removeProjectMember');
-    const result = await removeProjectMember({ projectId, memberUserId });
-    return result.data;
-  } catch (error) {
-    console.error('API Error removing member:', error);
-    throw error;
-  }
-};
 
 export const getMyInvitationsAPI = async () => {
   try {

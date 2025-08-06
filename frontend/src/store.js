@@ -13,7 +13,6 @@ import {
   updateTask as updateTaskAPI,
   deleteTask,
   inviteUserToProjectAPI,
-  removeProjectMemberAPI,
   getMyInvitationsAPI,
   acceptProjectInvitationAPI,
   declineProjectInvitationAPI,
@@ -63,6 +62,34 @@ const retryOperation = async (operation, maxRetries = 3, initialDelay = 1000) =>
 };
 
 
+// Helper function to safely get ISO string from task updatedAt for version control
+const getExpectedVersion = (task) => {
+  if (!task?.updatedAt) return null;
+  
+  try {
+    // If it's already a Date object, validate it first
+    if (task.updatedAt instanceof Date) {
+      // Check if the Date object is valid before calling toISOString()
+      if (isNaN(task.updatedAt.getTime())) {
+        console.warn('Invalid Date object in getExpectedVersion:', task.updatedAt);
+        return null;
+      }
+      return task.updatedAt.toISOString();
+    }
+    // If it's a string, validate it's a proper ISO string
+    if (typeof task.updatedAt === 'string') {
+      const date = new Date(task.updatedAt);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+    return null;
+  } catch (error) {
+    console.warn('Invalid updatedAt format in getExpectedVersion:', task.updatedAt, error);
+    return null;
+  }
+};
+
 // Helper function to validate optimistic updates against server response
 const validateOptimisticUpdate = (optimisticState, serverResponse, taskId) => {
   // Find the task in the optimistic state (could be in boards or tasks array)
@@ -80,10 +107,7 @@ const validateOptimisticUpdate = (optimisticState, serverResponse, taskId) => {
     if (optimisticTask) break;
   }
   
-  // Fallback to tasks array if not found in boards
-  if (!optimisticTask) {
-    optimisticTask = optimisticState.tasks.find(task => task._id === taskId);
-  }
+  // Task should always be found in boards structure
   
   if (!optimisticTask || !serverResponse) {
     return false;
@@ -131,15 +155,14 @@ export const useStore = create((set, get) => ({
   boards: [],
   selectedBoard: null,
 
-  // State for Tasks (within a board/column)
-  tasks: [],
+  // Tasks are stored within selectedBoard.columns[].tasks structure
 
   // Collaboration state
   projectMembers: [], // Current project member details
   invitations: [], // User's pending invitations
   collaborationLoading: false,
   
-  // RBAC state
+  // RBAC state, user-specific - maps ALL projects to CURRENT user's role
   userRoles: {}, // Map of projectId -> user's role in that project
   projectPermissions: {}, // Map of projectId -> user's permissions in that project
 
@@ -189,8 +212,7 @@ export const useStore = create((set, get) => ({
         projects: [],
         selectedProject: null,
         boards: [],
-        selectedBoard: null,
-        tasks: []
+        selectedBoard: null
       });
     } catch (error) {
       console.error('Error signing out:', error);
@@ -365,8 +387,8 @@ export const useStore = create((set, get) => ({
           columns: columnsWithIds
         };
       });
-      // Clear tasks when loading boards for a different project
-      set({ boards: boardsWithCompatibleIds, tasks: [], loading: false });
+      // Load boards with tasks in nested structure
+      set({ boards: boardsWithCompatibleIds, loading: false });
     } catch (error) {
       set({ error, loading: false });
     }
@@ -450,104 +472,10 @@ export const useStore = create((set, get) => ({
       return;
     }
 
-    console.log("Store: Setting selected board and clearing tasks:", board?.name);
-    set({ selectedBoard: board, tasks: [] });
+    console.log("Store: Setting selected board:", board?.name);
+    set({ selectedBoard: board });
   },
-  clearTasks: () => set({ tasks: [] }),
-
-  // Column Actions
-  addColumn: async (projectId, boardId, columnData) => {
-    set({ loading: true, error: null });
-    try {
-      const newColumn = await createColumn(projectId, boardId, columnData);
-      set((state) => ({
-        boards: state.boards.map((board) =>
-          board._id === boardId
-            ? { ...board, columns: [...board.columns, newColumn] }
-            : board
-        ),
-        loading: false,
-      }));
-      toastService.success('Column added successfully!');
-    } catch (error) {
-      toastService.handleError(error, 'add column');
-      set({ error, loading: false });
-    }
-  },
-  updateColumn: async (projectId, boardId, columnId, columnData) => {
-    set({ loading: true, error: null });
-    try {
-      const updatedColumn = await updateColumn(
-        projectId,
-        boardId,
-        columnId,
-        columnData
-      );
-      set((state) => ({
-        boards: state.boards.map((board) =>
-          board._id === boardId
-            ? {
-                ...board,
-                columns: board.columns.map((column) =>
-                  column._id === updatedColumn._id ? updatedColumn : column
-                ),
-              }
-            : board
-        ),
-        loading: false,
-      }));
-      toastService.success('Column updated successfully!');
-    } catch (error) {
-      toastService.handleError(error, 'update column');
-      set({ error, loading: false });
-    }
-  },
-  deleteColumn: async (projectId, boardId, columnId) => {
-    set({ loading: true, error: null });
-    try {
-      await deleteColumn(projectId, boardId, columnId);
-      set((state) => ({
-        boards: state.boards.map((board) =>
-          board._id === boardId
-            ? {
-                ...board,
-                columns: board.columns.filter(
-                  (column) => column._id !== columnId
-                ),
-              }
-            : board
-        ),
-        loading: false,
-      }));
-      toastService.success('Column deleted successfully!');
-    } catch (error) {
-      toastService.handleError(error, 'delete column');
-      set({ error, loading: false });
-    }
-  },
-
   // Task Actions
-  loadTasks: async (projectId, boardId, columnId) => {
-    set({ loading: true, error: null });
-    try {
-      const tasks = await fetchTasks(projectId, boardId, columnId);
-      // Apply proper date conversion - backend now returns ISO strings
-      const tasksWithConvertedDates = tasks.map(task => {
-        return {
-          ...task,
-          _id: task.id || task._id,
-          // Convert ISO strings back to Date objects
-          dueDate: safeCreateDate(task.dueDate),
-          createdAt: safeCreateDate(task.createdAt),
-          updatedAt: safeCreateDate(task.updatedAt)
-        };
-      });
-      set({ tasks: tasksWithConvertedDates, loading: false });
-    } catch (error) {
-      toastService.handleError(error, 'load tasks');
-      set({ error, loading: false });
-    }
-  },
   addTask: async (projectId, boardId, columnId, taskData) => {
     set({ loading: true, error: null });
     try {
@@ -555,7 +483,7 @@ export const useStore = create((set, get) => ({
         return await createTask(projectId, boardId, columnId, taskData);
       });
       
-      // Firebase functions now return ISO strings for dates, convert to Date objects
+      // Firebase functions return ISO strings for dates, convert to Date objects
       const normalizedTask = {
         ...newTask,
         _id: newTask.id,
@@ -565,10 +493,7 @@ export const useStore = create((set, get) => ({
         updatedAt: safeCreateDate(newTask.updatedAt)
       };
       
-      console.log("Store: Task created successfully:", normalizedTask);
-      
       set((state) => ({
-        tasks: [...state.tasks, normalizedTask],
         boards: state.boards.map((board) =>
           board._id === boardId
             ? {
@@ -595,6 +520,7 @@ export const useStore = create((set, get) => ({
         loading: false,
       }));
       
+      console.log("Store: Task created successfully:", normalizedTask);
       toastService.success('Task created successfully!');
       return normalizedTask; // Return the created task
     } catch (error) {
@@ -630,34 +556,6 @@ export const useStore = create((set, get) => ({
           break;
         }
       }
-
-      // Helper function to safely get ISO string from updatedAt
-      const getExpectedVersion = (task) => {
-        if (!task?.updatedAt) return null;
-        
-        try {
-          // If it's already a Date object, validate it first
-          if (task.updatedAt instanceof Date) {
-            // Check if the Date object is valid before calling toISOString()
-            if (isNaN(task.updatedAt.getTime())) {
-              console.warn('Invalid Date object in updateTask:', task.updatedAt);
-              return null;
-            }
-            return task.updatedAt.toISOString();
-          }
-          // If it's a string, validate it's a proper ISO string
-          if (typeof task.updatedAt === 'string') {
-            const date = new Date(task.updatedAt);
-            if (!isNaN(date.getTime())) {
-              return date.toISOString();
-            }
-          }
-          return null;
-        } catch (error) {
-          console.warn('Invalid updatedAt format:', task.updatedAt, error);
-          return null;
-        }
-      };
 
       const expectedVersion = getExpectedVersion(currentTask);
 
@@ -730,9 +628,6 @@ export const useStore = create((set, get) => ({
         return {
           boards: newBoards,
           selectedBoard: newSelectedBoard,
-          tasks: state.tasks.map((t) =>
-            t._id === updatedTask._id ? updatedTask : t
-          ),
           loading: false,
         };
       });
@@ -760,7 +655,6 @@ export const useStore = create((set, get) => ({
         return await deleteTask(taskId);
       });
       set((state) => ({
-        tasks: state.tasks.filter((task) => task._id !== taskId),
         boards: state.boards.map((board) =>
           board._id === boardId
             ? {
@@ -806,11 +700,6 @@ export const useStore = create((set, get) => ({
   // Optimistically update task attachments after successful upload
   updateTaskAttachments: (boardId, taskId, newAttachment) => {
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task._id === taskId
-          ? { ...task, attachments: [...(task.attachments || []), newAttachment] }
-          : task
-      ),
       boards: state.boards.map((board) =>
         board._id === boardId
           ? {
@@ -846,11 +735,6 @@ export const useStore = create((set, get) => ({
   // Remove attachment from task (for rollback on upload failure)
   removeTaskAttachment: (boardId, taskId, attachmentId) => {
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task._id === taskId
-          ? { ...task, attachments: (task.attachments || []).filter(att => att.id !== attachmentId) }
-          : task
-      ),
       boards: state.boards.map((board) =>
         board._id === boardId
           ? {
@@ -866,6 +750,7 @@ export const useStore = create((set, get) => ({
             }
           : board
       ),
+      // Need to update selectedBoard too so active board does not show stale data
       selectedBoard:
         state.selectedBoard && state.selectedBoard._id === boardId
           ? {
@@ -890,10 +775,9 @@ export const useStore = create((set, get) => ({
     let taskToMove = null;
     let sourceColumnId = null;
 
-    // Find the task in the boards array first (primary source of truth)
-    const boardInArray = state.boards.find((board) => board._id === boardId);
-    if (boardInArray) {
-      for (const column of boardInArray.columns) {
+    // Find the task in selectedBoard first since drag operations happen on active board
+    if (state.selectedBoard && state.selectedBoard._id === boardId) {
+      for (const column of state.selectedBoard.columns) {
         const foundTask = column.tasks?.find((task) => task._id === taskId);
         if (foundTask) {
           taskToMove = foundTask;
@@ -903,14 +787,17 @@ export const useStore = create((set, get) => ({
       }
     }
 
-    // If not found in boards array, try selectedBoard as fallback
-    if (!taskToMove && state.selectedBoard && state.selectedBoard._id === boardId) {
-      for (const column of state.selectedBoard.columns) {
-        const foundTask = column.tasks?.find((task) => task._id === taskId);
-        if (foundTask) {
-          taskToMove = foundTask;
-          sourceColumnId = column._id;
-          break;
+    // If not found in selectedBoard, fallback to boards array
+    if (!taskToMove) {
+      const boardInArray = state.boards.find((board) => board._id === boardId);
+      if (boardInArray) {
+        for (const column of boardInArray.columns) {
+          const foundTask = column.tasks?.find((task) => task._id === taskId);
+          if (foundTask) {
+            taskToMove = foundTask;
+            sourceColumnId = column._id;
+            break;
+          }
         }
       }
     }
@@ -974,32 +861,6 @@ export const useStore = create((set, get) => ({
     });
 
     try {
-      // Get expected version safely
-      const getExpectedVersion = (task) => {
-        if (!task?.updatedAt) return null;
-        
-        try {
-          if (task.updatedAt instanceof Date) {
-            // Check if the Date object is valid before calling toISOString()
-            if (isNaN(task.updatedAt.getTime())) {
-              console.warn('Invalid Date object in moveTask:', task.updatedAt);
-              return null;
-            }
-            return task.updatedAt.toISOString();
-          }
-          if (typeof task.updatedAt === 'string') {
-            const date = new Date(task.updatedAt);
-            if (!isNaN(date.getTime())) {
-              return date.toISOString();
-            }
-          }
-          return null;
-        } catch (error) {
-          console.warn('Invalid updatedAt format in moveTask:', task.updatedAt, error);
-          return null;
-        }
-      };
-
       // Update task on backend with column only, using retry logic
       const serverResponse = await retryOperation(async () => {
         return await updateTaskAPI(
@@ -1097,7 +958,7 @@ export const useStore = create((set, get) => ({
   // Drag & Drop Actions
   setDragInProgress: (isDragging) => set({ isDragInProgress: isDragging }),
 
-  // RBAC Helper Functions (UI optimization only - server enforces security)
+  // RBAC Helper Functions (UI logic only - server enforces security)
   getUserRole: (projectId) => {
     const { userRoles } = get();
     return userRoles[projectId] || 'viewer';
@@ -1147,34 +1008,6 @@ export const useStore = create((set, get) => ({
     }
   },
   
-  removeProjectMember: async (projectId, memberUserId) => {
-    set({ collaborationLoading: true, error: null });
-    try {
-      await removeProjectMemberAPI(projectId, memberUserId);
-      
-      // Update local state - remove member from current project
-      set((state) => ({
-        projects: state.projects.map(project => 
-          project._id === projectId 
-            ? { ...project, members: project.members.filter(id => id !== memberUserId) }
-            : project
-        ),
-        selectedProject: state.selectedProject?._id === projectId
-          ? { 
-              ...state.selectedProject, 
-              members: state.selectedProject.members.filter(id => id !== memberUserId)
-            }
-          : state.selectedProject,
-        projectMembers: state.projectMembers.filter(member => member.uid !== memberUserId),
-        collaborationLoading: false
-      }));
-      toastService.success('Member removed from project.');
-    } catch (error) {
-      toastService.handleError(error, 'remove project member');
-      set({ error, collaborationLoading: false });
-      throw error;
-    }
-  },
   
   loadMyInvitations: async () => {
     set({ collaborationLoading: true, error: null });

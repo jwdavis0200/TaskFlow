@@ -211,19 +211,3 @@ export const deleteTask = async (taskId) => {
   }
 };
 
-// Column functions (these are handled by board operations in Firebase)
-export const createColumn = async (boardId, columnData) => {
-  // In Firebase, columns are created automatically with boards
-  // This would need to be implemented as a separate function if needed
-  throw new Error('createColumn not implemented - columns are created with boards');
-};
-
-export const updateColumn = async (columnId, updates) => {
-  // This would need to be implemented as a separate function if needed
-  throw new Error('updateColumn not implemented - use board operations');
-};
-
-export const deleteColumn = async (columnId) => {
-  // This would need to be implemented as a separate function if needed
-  throw new Error('deleteColumn not implemented - use board operations');
-};
