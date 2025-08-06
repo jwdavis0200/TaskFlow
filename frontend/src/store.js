@@ -205,9 +205,8 @@ export const useStore = create((set, get) => ({
       // Only authenticate non-anonymous users
       if (user && !user.isAnonymous) {
         set({ user, isAuthenticated: true, authLoading: false });
-        // Auto-load projects when user is authenticated
-        const { loadProjects } = get();
-        loadProjects();
+        // Load projects when user is authenticated without blocking
+        get().loadProjects();
       } else {
         // Sign out anonymous users or null users
         set({ user: null, isAuthenticated: false, authLoading: false });
@@ -233,7 +232,7 @@ export const useStore = create((set, get) => ({
         }))
       }));
       console.log("Store: Projects with boards mapped:", projectsWithBoards);
-      const { user } = get();
+      const user = get().user;
       if (user) {
         const userRoles = {};
         
@@ -318,6 +317,7 @@ export const useStore = create((set, get) => ({
       set({ error, loading: false });
     }
   },
+  // Sets which project is currently active for the user
   setSelectedProject: (project) => {
     // Validate project has required properties
     if (project && (!project._id || !project.name)) {
@@ -331,7 +331,7 @@ export const useStore = create((set, get) => ({
 
   // Board Actions
   loadBoards: async (projectId) => {
-    const { isDragInProgress } = get();
+    const isDragInProgress = get().isDragInProgress;
     if (isDragInProgress) {
       console.log('Store: Skipping loadBoards during drag operation');
       return;
@@ -346,10 +346,10 @@ export const useStore = create((set, get) => ({
           ...column,
           _id: column.id,
           // Normalize tasks and keep them in their current column
-          tasks: (column.tasks || []).map((task, index) => {
+          tasks: (column.tasks || []).map((task, _index) => {
             return {
               ...task,
-              _id: task.id || task._id || `task-${column.id}-${index}`,
+              _id: task.id || task._id,
               // Convert ISO strings back to Date objects for consistent frontend handling
               dueDate: safeCreateDate(task.dueDate),
               createdAt: safeCreateDate(task.createdAt),
@@ -372,7 +372,8 @@ export const useStore = create((set, get) => ({
     }
   },
   addBoard: async (projectId, boardData) => {
-    const { loadProjects, loadBoards } = get();
+    const loadProjects = get().loadProjects;
+    const loadBoards = get().loadBoards;
     set({ loading: true, error: null });
     try {
       const newBoard = await createBoard(projectId, boardData);
@@ -442,15 +443,14 @@ export const useStore = create((set, get) => ({
       console.log('Store: Skipping setSelectedBoard during drag operation');
       return;
     }
-    
-    console.log("Store: Setting selected board and clearing tasks:", board?.name);
-    
+
     // Validate board has required properties
     if (board && (!board._id || !board.name)) {
       console.error("Store: Invalid board data provided:", board);
       return;
     }
-    
+
+    console.log("Store: Setting selected board and clearing tasks:", board?.name);
     set({ selectedBoard: board, tasks: [] });
   },
   clearTasks: () => set({ tasks: [] }),
