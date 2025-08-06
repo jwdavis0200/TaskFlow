@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import {
-  fetchProjects,
   createProject,
   updateProject,
   deleteProject,
@@ -19,6 +18,7 @@ import {
   getProjectMembersAPI,
   changeUserRoleAPI,
   removeProjectMemberSecureAPI,
+  fetchProjectsWithBoards,
 } from "./services/api.js";
 import { signIn, signUp, onAuthStateChange, logout, clearAnonymousSessions } from "./firebase/auth";
 import { toastService } from './components/toast/toastService.jsx';
@@ -241,7 +241,7 @@ export const useStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       console.log("Store: Fetching projects from API...");
-      const projects = await fetchProjects();
+      const projects = await fetchProjectsWithBoards();
       console.log("Store: Projects fetched:", projects);
       // Firebase functions return boards directly (not boardsList)
       // Map Firebase 'id' to '_id' for compatibility with existing components
@@ -418,7 +418,7 @@ export const useStore = create((set, get) => ({
   updateBoard: async (projectId, boardId, boardData) => {
     set({ loading: true, error: null });
     try {
-      const updatedBoard = await updateBoard(projectId, boardId, boardData);
+      const updatedBoard = await updateBoard( boardId, boardData);
       set((state) => ({
         boards: state.boards.map((board) =>
           board._id === updatedBoard._id ? updatedBoard : board
@@ -562,9 +562,6 @@ export const useStore = create((set, get) => ({
       // 1. Call the API to update the task on the backend with retry logic
       const updatedTask = await retryOperation(async () => {
         return await updateTaskAPI(
-          projectId,
-          boardId,
-          columnId,
           taskId,
           taskData,
           expectedVersion
@@ -864,9 +861,6 @@ export const useStore = create((set, get) => ({
       // Update task on backend with column only, using retry logic
       const serverResponse = await retryOperation(async () => {
         return await updateTaskAPI(
-          projectId, 
-          boardId, 
-          sourceColumnId, 
           taskId, 
           { columnId: destColumnId },
           getExpectedVersion(taskToMove)

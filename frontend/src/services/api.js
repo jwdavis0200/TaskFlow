@@ -1,16 +1,10 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
 
-// Projects API
-export const fetchProjects = async () => {
+export const fetchProjectsWithBoards = async () => {
   const getProjects = httpsCallable(functions, 'getProjects');
   const result = await getProjects();
   return result.data;
-};
-
-export const fetchProjectsWithBoards = async () => {
-  // Firebase functions already return projects with boards populated
-  return await fetchProjects();
 };
 
 export const createProject = async (projectData) => {
@@ -60,7 +54,7 @@ export const createBoard = async (projectId, boardData) => {
   }
 };
 
-export const updateBoard = async (projectId, boardId, boardData) => {
+export const updateBoard = async ( boardId, boardData) => {
   const updateBoard = httpsCallable(functions, 'updateBoard');
   const result = await updateBoard({ boardId, updates: boardData });
   return result.data;
@@ -100,14 +94,7 @@ export const createTask = async (projectId, boardId, columnId, taskData) => {
   return result.data;
 };
 
-export const updateTask = async (
-  projectId,
-  boardId,
-  columnId,
-  taskId,
-  taskData,
-  expectedVersion = null
-) => {
+export const updateTask = async (taskId, taskData, expectedVersion = null) => {
   const updateTask = httpsCallable(functions, 'updateTask');
   const payload = { taskId, updates: taskData };
   

@@ -185,7 +185,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {
-    updateTask(projectId, boardId, columnId, taskId, {
+    updateTask(taskId, {
       columnId: columnId,
       timeSpent: newTimeSpent,
       isRunning: true
@@ -194,7 +194,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
 
   // Handler for timer completion from the Timer component
   const handleTimerComplete = (taskId, finalTime) => {
-    updateTask(projectId, boardId, columnId, taskId, {
+    updateTask(taskId, {
       columnId: columnId,
       isRunning: false,
       timeSpent: finalTime // Use final time from timer (authoritative)
