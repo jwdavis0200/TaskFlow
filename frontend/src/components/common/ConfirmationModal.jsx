@@ -242,7 +242,7 @@ const ConfirmationModal = ({
               type="button" 
               onClick={handleConfirm} 
               disabled={isLoading}
-              modalType={confirmButtonStyle || modalType}
+              modalType={modalType}
             >
               {isLoading && <LoadingSpinner />}
               {confirmText}
