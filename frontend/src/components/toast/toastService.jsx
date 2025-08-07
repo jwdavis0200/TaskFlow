@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import NotificationToast from './NotificationToast';
 import { TOAST_CONFIG } from './config';
 
-// Toast service that can be used outside of React components
+// Toast service class that can be used outside of React components
 class ToastService {
   constructor() {
     this.toastLimit = TOAST_CONFIG.limit;
