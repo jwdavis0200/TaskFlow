@@ -2,6 +2,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
+import { Image, FilePdf, FileDoc, FileText, Paperclip } from '@phosphor-icons/react';
 
 /**
  * File validation utilities
@@ -82,20 +83,22 @@ export const formatFileSize = (bytes) => {
   
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
+
+  // Calculate index for appropriate sizes[i] for the current file size
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
 /**
- * Get file type icon/emoji
+ * Get file type icon component, return phospor functions
  */
 export const getFileIcon = (mimeType) => {
-  if (mimeType.startsWith('image/')) return '🖼️';
-  if (mimeType === 'application/pdf') return '📄';
-  if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
-  if (mimeType.startsWith('text/')) return '📄';
-  return '📎';
+  if (mimeType.startsWith('image/')) return Image;
+  if (mimeType === 'application/pdf') return FilePdf;
+  if (mimeType.includes('word') || mimeType.includes('document')) return FileDoc;
+  if (mimeType.startsWith('text/')) return FileText;
+  return Paperclip;
 };
 
 /**
@@ -179,7 +182,7 @@ const uploadWithStorageSDK = async (taskId, file, attachmentId, storagePath, onP
         } catch (confirmError) {
           console.error('Confirmation failed, but file uploaded:', confirmError);
           
-          // Fall back to client-side metadata since upload succeeded
+          // Fall back to client-side metadata since upload succeeded locally
           resolve({
             attachmentId,
             attachment: {
