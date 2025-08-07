@@ -2,7 +2,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
-import { Image, FilePdf, FileDoc, FileText, Paperclip } from '@phosphor-icons/react';
+import { FiImage, FiFileText, FiFile, FiPaperclip } from 'react-icons/fi'
 
 /**
  * File validation utilities
@@ -91,14 +91,14 @@ export const formatFileSize = (bytes) => {
 };
 
 /**
- * Get file type icon component, return phospor functions
+ * Get file type icon component, return react-icons functions
  */
 export const getFileIcon = (mimeType) => {
-  if (mimeType.startsWith('image/')) return Image;
-  if (mimeType === 'application/pdf') return FilePdf;
-  if (mimeType.includes('word') || mimeType.includes('document')) return FileDoc;
-  if (mimeType.startsWith('text/')) return FileText;
-  return Paperclip;
+  if (mimeType.startsWith('image/')) return FiImage;
+  if (mimeType === 'application/pdf') return FiFile;
+  if (mimeType.includes('word') || mimeType.includes('document')) return FiFile;
+  if (mimeType.startsWith('text/')) return FiFileText;
+  return FiPaperclip;
 };
 
 /**

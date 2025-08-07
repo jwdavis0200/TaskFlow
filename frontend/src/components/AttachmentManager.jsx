@@ -71,7 +71,9 @@ const AttachmentItem = styled.div`
 `;
 
 const FileIcon = styled.span`
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const FileName = styled.span`
@@ -218,91 +220,10 @@ const AttachmentManager = forwardRef(({
     updateParent(updatedPendingFiles);
   };
 
-  const uploadFiles = async (files) => {
-    for (const file of files) {
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
-      
-      // Add to pending files with uploading status
-      const pendingFile = {
-        id: tempId,
-        file,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        status: 'uploading'
-      };
-      
-      setPendingFiles(prev => [...prev, pendingFile]);
-      
-      // For existing tasks with boardId, also add optimistic update to store immediately
-      let tempAttachment = null;
-      if (boardId && taskId) {
-        tempAttachment = {
-          id: tempId,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type,
-          uploading: true
-        };
-        updateTaskAttachments(boardId, taskId, tempAttachment);
-      }
-      
-      try {
-        const result = await uploadTaskAttachment(
-          taskId,
-          file,
-          (progress) => {
-            setUploadProgress(prev => ({
-              ...prev,
-              [tempId]: progress
-            }));
-          }
-        );
-        
-        // Remove from pending 
-        setPendingFiles(prev => prev.filter(pf => pf.id !== tempId));
-        setUploadProgress(prev => {
-          const { [tempId]: removed, ...rest } = prev;
-          return rest;
-        });
-        
-        // Update store with real attachment
-        if (boardId && taskId) {
-          // Replace temp attachment with real one
-          if (tempAttachment) {
-            removeTaskAttachment(boardId, taskId, tempAttachment.id);
-          }
-          updateTaskAttachments(boardId, taskId, result.attachment);
-        } else if (onAttachmentsChange) {
-          // Fallback for new tasks - update parent component
-          const newAttachments = [...existingAttachments, result.attachment];
-          onAttachmentsChange(newAttachments);
-        }
-        
-      } catch (error) {
-        // Remove temp attachment from store if upload failed
-        if (boardId && taskId && tempAttachment) {
-          removeTaskAttachment(boardId, taskId, tempAttachment.id);
-        }
-        
-        // Mark as error
-        setPendingFiles(prev => 
-          prev.map(pf => 
-            pf.id === tempId 
-              ? { ...pf, status: 'error', error: error.message }
-              : pf
-          )
-        );
-        setErrors(prev => [...prev, `Failed to upload ${file.name}: ${error.message}`]);
-      }
-    }
-  };
-
   // Method to upload pending files (called by TaskForm after task creation)
   const uploadPendingFiles = async (overrideTaskId = null, overrideBoardId = null) => {
     // Use provided parameters for new task flow, fallback to props for existing task flow
     const uploadTaskId = overrideTaskId || taskId;
-    const uploadBoardId = overrideBoardId || boardId;
     const pendingFilesToUpload = pendingFiles.filter(pf => pf.status === 'ready');
     if (pendingFilesToUpload.length === 0) {
       // No files to upload, just return
@@ -497,7 +418,12 @@ const AttachmentManager = forwardRef(({
           {/* Existing attachments - only show if we have a taskId */}
           {taskId && (Array.isArray(existingAttachments) ? existingAttachments : []).filter(att => att && att.id).map(attachment => (
             <AttachmentItem key={attachment.id}>
-              <FileIcon>{getFileIcon(attachment.mimeType || 'application/octet-stream')}</FileIcon>
+              <FileIcon>
+                {(() => {
+                  const IconComponent = getFileIcon(attachment.mimeType || 'application/octet-stream');
+                  return <IconComponent size={16} />;
+                })()}
+              </FileIcon>
               <FileName title={attachment.fileName || 'Unknown file'}>{attachment.fileName || 'Unknown file'}</FileName>
               <FileSize>{formatFileSize(attachment.fileSize || 0)}</FileSize>
               {taskId && (
@@ -531,7 +457,12 @@ const AttachmentManager = forwardRef(({
             })
             .map(pendingFile => (
             <AttachmentItem key={pendingFile.id}>
-              <FileIcon>{getFileIcon(pendingFile.mimeType)}</FileIcon>
+              <FileIcon>
+                {(() => {
+                  const IconComponent = getFileIcon(pendingFile.mimeType);
+                  return <IconComponent size={16} />;
+                })()}
+              </FileIcon>
               <FileName title={pendingFile.fileName}>{pendingFile.fileName}</FileName>
               <FileSize>{formatFileSize(pendingFile.fileSize)}</FileSize>
               
