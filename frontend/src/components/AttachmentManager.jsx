@@ -1,4 +1,4 @@
-import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { useStore } from '../store';
 import { 
@@ -144,14 +144,18 @@ const AttachmentCounter = styled.span`
   margin-left: 8px;
 `;
 
-const AttachmentManager = forwardRef(({ 
+const AttachmentManager = ({ 
   taskId = null, // null for new tasks, taskId for existing tasks
   boardId = null, // needed for optimistic updates
   existingAttachments = [], 
   onAttachmentsChange,
   disabled = false,
-  onUploadComplete = null // callback when upload operations complete
-}, ref) => {
+  // New callback props for migration from forwardRef
+  onPendingFilesChange = null, // sends pending files to parent
+  onUploadRequest = null, // parent provides upload handler
+  onUploadSuccess = null, // upload success callback
+  onUploadError = null // upload error callback
+}) => {
   
   // Store methods for optimistic updates
   const updateTaskAttachments = useStore((state) => state.updateTaskAttachments);
@@ -166,15 +170,14 @@ const AttachmentManager = forwardRef(({
   const allAttachments = [...(Array.isArray(existingAttachments) ? existingAttachments : []), ...pendingFiles];
   const totalFiles = allAttachments.length;
   
-  // Expose methods to parent component
-  useImperativeHandle(ref, () => ({
-    uploadPendingFiles
-  }), [pendingFiles, taskId, boardId]);
-  
-  // Helper to update parent component (only used for new tasks without taskId)
+  // Helper to update parent component (prioritizes new callback pattern over legacy)
   const updateParent = (newPendingFiles) => {
-    if (onAttachmentsChange && !taskId) {
-      // Only for new tasks, send pending files to parent
+    // Use new callback pattern if available
+    if (onPendingFilesChange) {
+      onPendingFilesChange(newPendingFiles);
+    } 
+    // Fallback to legacy pattern only for new tasks and if new pattern not available
+    else if (onAttachmentsChange && !taskId) {
       onAttachmentsChange(newPendingFiles);
     }
   };
@@ -203,6 +206,7 @@ const AttachmentManager = forwardRef(({
       return;
     }
     
+    // Clear validation errors when files are successfully added
     setErrors([]);
     
     // For both new and existing tasks, store files for later upload (consistent behavior)
@@ -220,75 +224,157 @@ const AttachmentManager = forwardRef(({
     updateParent(updatedPendingFiles);
   };
 
-  // Method to upload pending files (called by TaskForm after task creation)
+  // Method to upload pending files with proper progress tracking and partial failure handling
   const uploadPendingFiles = async (overrideTaskId = null, overrideBoardId = null) => {
     // Use provided parameters for new task flow, fallback to props for existing task flow
     const uploadTaskId = overrideTaskId || taskId;
+    const uploadBoardId = overrideBoardId || boardId;
     const pendingFilesToUpload = pendingFiles.filter(pf => pf.status === 'ready');
+    
     if (pendingFilesToUpload.length === 0) {
       // No files to upload, just return
       return;
     }
 
-    const uploadErrors = [];
-    
-    for (const pendingFile of pendingFilesToUpload) {
-      // Update pending file status to 'uploading'
-      setPendingFiles(prev => 
-        prev.map(pf => 
-          pf.id === pendingFile.id 
-            ? { ...pf, status: 'uploading' }
-            : pf
-        )
-      );
-      
+    // Callback pattern: delegate to parent with proper progress tracking
+    if (onUploadRequest) {
       try {
-        // Perform actual upload with progress tracking
-        const result = await uploadTaskAttachment(uploadTaskId, pendingFile.file, 
-          (progress) => {
+        // Mark all files as uploading before starting
+        setPendingFiles(prev => 
+          prev.map(pf => 
+            pf.status === 'ready' 
+              ? { ...pf, status: 'uploading' }
+              : pf
+          )
+        );
+
+        const uploadResults = await onUploadRequest(
+          pendingFilesToUpload, 
+          uploadTaskId, 
+          uploadBoardId,
+          // Progress callback
+          (fileId, progress) => {
             setUploadProgress(prev => ({
               ...prev,
-              [pendingFile.id]: progress
+              [fileId]: progress
             }));
           }
         );
-        
-        
-        // Remove from pending files and clear progress
-        setPendingFiles(prev => prev.filter(pf => pf.id !== pendingFile.id));
-        setUploadProgress(prev => {
-          const { [pendingFile.id]: removed, ...rest } = prev;
-          return rest;
-        });
-        
-        console.log("AttachmentManager: Successfully uploaded:", pendingFile.fileName);
-      } catch (uploadError) {
-        console.error("AttachmentManager: Failed to upload:", pendingFile.fileName, uploadError);
-        
-        
-        // Clear progress and mark as failed
-        setUploadProgress(prev => {
-          const { [pendingFile.id]: removed, ...rest } = prev;
-          return rest;
-        });
+
+        // Handle results based on success/failure
+        if (uploadResults && typeof uploadResults === 'object') {
+          // Remove successful uploads from pending files and add optimistic updates
+          if (uploadResults.successful && uploadResults.successful.length > 0) {
+            // Get the successfully uploaded files for optimistic updates
+            const successfulFiles = uploadResults.successful.map(s => {
+              const originalFile = pendingFilesToUpload.find(pf => pf.id === s.fileId);
+              return {
+                id: s.result?.id || `uploaded-${Date.now()}-${Math.random()}`, // Use server ID if available
+                fileName: originalFile.fileName,
+                fileSize: originalFile.fileSize,
+                mimeType: originalFile.mimeType,
+                downloadURL: s.result?.downloadURL || null,
+                storagePath: s.result?.storagePath || null,
+                uploadedAt: new Date().toISOString(),
+                uploadedBy: 'current-user' // Could be enhanced with actual user ID
+              };
+            });
+
+            // Optimistically update the store for existing tasks
+            if (uploadTaskId && uploadBoardId) {
+              successfulFiles.forEach(attachment => {
+                updateTaskAttachments(uploadBoardId, uploadTaskId, attachment);
+              });
+            }
+
+            // Remove successful files from pending
+            setPendingFiles(prev => prev.filter(pf => 
+              !uploadResults.successful.some(s => s.fileId === pf.id)
+            ));
+            
+            // Clear progress for successful files
+            const successfulIds = uploadResults.successful.map(s => s.fileId);
+            setUploadProgress(prev => {
+              const newProgress = { ...prev };
+              successfulIds.forEach(id => delete newProgress[id]);
+              return newProgress;
+            });
+          }
+
+          // Mark failed uploads as errored
+          if (uploadResults.failed && uploadResults.failed.length > 0) {
+            setPendingFiles(prev => 
+              prev.map(pf => {
+                const failedUpload = uploadResults.failed.find(f => f.fileId === pf.id);
+                return failedUpload 
+                  ? { ...pf, status: 'error', error: failedUpload.error }
+                  : pf;
+              })
+            );
+
+            // Clear progress for failed files
+            const failedIds = uploadResults.failed.map(f => f.fileId);
+            setUploadProgress(prev => {
+              const newProgress = { ...prev };
+              failedIds.forEach(id => delete newProgress[id]);
+              return newProgress;
+            });
+          }
+
+          // Call success callback if any files succeeded and clear errors
+          if (uploadResults.successful && uploadResults.successful.length > 0) {
+            // Clear errors for successfully uploaded files
+            setErrors(prev => prev.filter(error => 
+              !uploadResults.successful.some(s => error.includes(pendingFilesToUpload.find(pf => pf.id === s.fileId)?.fileName))
+            ));
+            
+            if (onUploadSuccess) {
+              onUploadSuccess();
+            }
+          }
+
+          // Call error callback if any files failed and add detailed error messages
+          if (uploadResults.failed && uploadResults.failed.length > 0) {
+            // Add specific error messages to the local error state
+            const newErrors = uploadResults.failed.map(f => `Failed to upload ${f.fileName}: ${f.error}`);
+            setErrors(prev => [...prev, ...newErrors]);
+            
+            if (onUploadError) {
+              const combinedError = new Error(uploadResults.failed.map(f => f.error).join('; '));
+              onUploadError(combinedError);
+            }
+          }
+
+          // Only throw if all uploads failed
+          if (uploadResults.allFailed) {
+            throw new Error(uploadResults.failed.map(f => f.error).join('; '));
+          }
+        } else {
+          // Legacy handling - clear all on success
+          setPendingFiles(prev => prev.filter(pf => pf.status !== 'uploading'));
+          setUploadProgress({});
+          if (onUploadSuccess) {
+            onUploadSuccess();
+          }
+        }
+      } catch (error) {
+        // Mark all uploading files as errored
         setPendingFiles(prev => 
           prev.map(pf => 
-            pf.id === pendingFile.id 
-              ? { ...pf, status: 'error', error: uploadError.message }
+            pf.status === 'uploading' 
+              ? { ...pf, status: 'error', error: error.message }
               : pf
           )
         );
         
-        // Track error
-        const errorMessage = `Failed to upload ${pendingFile.fileName}: ${uploadError.message}`;
-        uploadErrors.push(errorMessage);
-        setErrors(prev => [...prev, errorMessage]);
+        // Clear progress for errored files
+        setUploadProgress({});
+        
+        if (onUploadError) {
+          onUploadError(error);
+        }
+        throw error; // Re-throw for backward compatibility
       }
-    }
-    
-    // Throw error if there were upload failures
-    if (uploadErrors.length > 0) {
-      throw new Error(uploadErrors.join('; '));
     }
   };
 
@@ -492,7 +578,7 @@ const AttachmentManager = forwardRef(({
       )}
     </AttachmentContainer>
   );
-});
+};
 
 AttachmentManager.displayName = 'AttachmentManager';
 

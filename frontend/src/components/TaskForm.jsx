@@ -18,6 +18,7 @@ import {
 } from "./common/FormComponents";
 import LoadingSpinner from "./common/LoadingSpinner";
 import AttachmentManager from "./AttachmentManager";
+import { uploadTaskAttachment } from "../services/storage";
 
 
 const TaskForm = ({ task, onClose }) => {
@@ -25,7 +26,8 @@ const TaskForm = ({ task, onClose }) => {
   const updateTask = useStore((state) => state.updateTask);
   const selectedBoard = useStore((state) => state.selectedBoard);
   const projects = useStore((state) => state.projects);
-  const attachmentManagerRef = useRef();
+
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -37,6 +39,36 @@ const TaskForm = ({ task, onClose }) => {
   // Clear attachment errors when starting new operations
   const clearAttachmentErrors = () => setAttachmentErrors([]);
   
+  // Handle file uploads with progress tracking and proper error handling
+  const handleUploadRequest = async (pendingFilesToUpload, taskId, onProgressUpdate) => {
+    const uploadErrors = [];
+    const successfulUploads = [];
+    
+    for (const pendingFile of pendingFilesToUpload) {
+      try {
+        const result = await uploadTaskAttachment(taskId, pendingFile.file, (progress) => {
+          // Pass progress back to AttachmentManager
+          if (onProgressUpdate) {
+            onProgressUpdate(pendingFile.id, progress);
+          }
+        });
+        
+        successfulUploads.push({ fileId: pendingFile.id, result });
+        console.log("TaskForm: Successfully uploaded:", pendingFile.fileName);
+      } catch (uploadError) {
+        console.error("TaskForm: Failed to upload:", pendingFile.fileName, uploadError);
+        const errorMessage = `Failed to upload ${pendingFile.fileName}: ${uploadError.message}`;
+        uploadErrors.push({ fileId: pendingFile.id, fileName: pendingFile.fileName, error: uploadError.message });
+      }
+    }
+    
+    // Return results instead of throwing immediately - let caller decide
+    return {
+      successful: successfulUploads,
+      failed: uploadErrors,
+      allFailed: uploadErrors.length === pendingFilesToUpload.length
+    };
+  };
 
   useEffect(() => {
     if (task) {
@@ -107,12 +139,33 @@ const TaskForm = ({ task, onClose }) => {
         });
         
         // Upload pending attachments if any exist
-        if (attachmentManagerRef.current) {
+        if (pendingFiles.length > 0) {
           try {
-            await attachmentManagerRef.current.uploadPendingFiles(task._id, boardId);
-            onClose(); // Close modal after successful upload
+            const uploadResults = await handleUploadRequest(
+              pendingFiles, 
+              task._id,
+            );
+            
+            if (uploadResults.failed.length > 0 && uploadResults.allFailed) {
+              // All uploads failed
+              const errorMessages = uploadResults.failed.map(f => f.error);
+              setAttachmentErrors(errorMessages);
+              setIsSubmitting(false);
+            } else if (uploadResults.failed.length > 0) {
+              // Partial failures - show errors but don't stop
+              const errorMessages = uploadResults.failed.map(f => f.error);
+              setAttachmentErrors(errorMessages);
+              setPendingFiles(prev => prev.filter(pf => 
+                !uploadResults.successful.some(s => s.fileId === pf.id)
+              ));
+              onClose(); // Close modal, some uploads succeeded
+            } else {
+              // All uploads successful
+              setPendingFiles([]);
+              onClose();
+            }
           } catch (uploadError) {
-            console.error("TaskForm: Failed to upload attachments:", uploadError);
+            console.error("TaskForm: Unexpected upload error:", uploadError);
             setAttachmentErrors([`Failed to upload attachments: ${uploadError.message}`]);
             setIsSubmitting(false);
           }
@@ -124,12 +177,33 @@ const TaskForm = ({ task, onClose }) => {
         const createdTask = await addTask(projectId, boardId, targetColumnId, taskData);
         
         // Upload pending attachments if any exist
-        if (attachmentManagerRef.current) {
+        if (pendingFiles.length > 0) {
           try {
-            await attachmentManagerRef.current.uploadPendingFiles(createdTask._id, boardId);
-            onClose(); // Close modal after successful upload
+            const uploadResults = await handleUploadRequest(
+              pendingFiles, 
+              createdTask._id, 
+            );
+            
+            if (uploadResults.failed.length > 0 && uploadResults.allFailed) {
+              // All uploads failed
+              const errorMessages = uploadResults.failed.map(f => f.error);
+              setAttachmentErrors(errorMessages);
+              setIsSubmitting(false);
+            } else if (uploadResults.failed.length > 0) {
+              // Partial failures - show errors but don't stop
+              const errorMessages = uploadResults.failed.map(f => f.error);
+              setAttachmentErrors(errorMessages);
+              setPendingFiles(prev => prev.filter(pf => 
+                !uploadResults.successful.some(s => s.fileId === pf.id)
+              ));
+              onClose(); // Close modal, some uploads succeeded
+            } else {
+              // All uploads successful
+              setPendingFiles([]);
+              onClose();
+            }
           } catch (uploadError) {
-            console.error("TaskForm: Failed to upload attachments:", uploadError);
+            console.error("TaskForm: Unexpected upload error:", uploadError);
             setAttachmentErrors([`Failed to upload attachments: ${uploadError.message}`]);
             setIsSubmitting(false);
           }
@@ -222,11 +296,13 @@ const TaskForm = ({ task, onClose }) => {
         <FormGroup>
           <Label htmlFor="attachments">Attachments</Label>
           <AttachmentManager
-            ref={attachmentManagerRef}
             taskId={task?._id}
             boardId={selectedBoard?._id}
             existingAttachments={task?.attachments || []}
             disabled={isSubmitting}
+            onPendingFilesChange={setPendingFiles}
+            onUploadRequest={handleUploadRequest}
+            onUploadError={(error) => setAttachmentErrors([error.message])}
           />
           {attachmentErrors.length > 0 && (
             <div style={{ 
