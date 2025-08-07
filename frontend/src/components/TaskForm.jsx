@@ -100,8 +100,8 @@ const TaskForm = ({ task, onClose }) => {
           newColumnId,
           taskData,
         });
-        // Update existing task - pass current columnId as 3rd param, new columnId in taskData
-        await updateTask(task._id, { 
+        // Update existing task - pass all required parameters
+        await updateTask(projectId, boardId, task.columnId, task._id, { 
           ...taskData, 
           columnId: newColumnId 
         });
