@@ -201,7 +201,6 @@ const ConfirmationModal = ({
   cancelText = "Cancel",
   isLoading = false,
   modalType = "default", // default, danger, success, info
-  confirmButtonStyle = "" // For backward compatibility
 }) => {
   const handleConfirm = async () => {
     await onConfirm();
@@ -210,9 +209,9 @@ const ConfirmationModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={!isLoading}>
       <ConfirmationContainer>
-        <ConfirmationHeader modalType={confirmButtonStyle || modalType}>
+        <ConfirmationHeader modalType={modalType}>
           <ConfirmationTitle>
-            <ModalIcon modalType={confirmButtonStyle || modalType} />
+            <ModalIcon modalType={modalType} />
             {title}
           </ConfirmationTitle>
         </ConfirmationHeader>
