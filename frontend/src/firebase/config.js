@@ -30,7 +30,7 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
       // Auth emulator
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
       console.log('Connected to Auth emulator');
-    } catch (error) {
+    } catch {
       console.log('Auth emulator already connected or unavailable');
     }
     
@@ -38,7 +38,7 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
       // Firestore emulator  
       connectFirestoreEmulator(db, '127.0.0.1', 8080);
       console.log('Connected to Firestore emulator');
-    } catch (error) {
+    } catch {
       console.log('Firestore emulator already connected or unavailable');
     }
     
@@ -46,7 +46,7 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
       // Functions emulator
       connectFunctionsEmulator(functions, '127.0.0.1', 5001);
       console.log('Connected to Functions emulator');
-    } catch (error) {
+    } catch {
       console.log('Functions emulator already connected or unavailable');
     }
     
@@ -54,7 +54,7 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
       // Storage emulator
       connectStorageEmulator(storage, '127.0.0.1', 9199);
       console.log('Connected to Storage emulator');
-    } catch (error) {
+    } catch {
       console.log('Storage emulator already connected or unavailable');
     }
   }

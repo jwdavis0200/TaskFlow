@@ -118,7 +118,7 @@ export function removeTimer(taskId) {
  * @returns {Map} Map of taskId to timer instances.
  */
 export function getActiveTimers() {
-  return new Map([...timerRegistry.entries()].filter(([_, timer]) => timer.isRunning()));
+  return new Map([...timerRegistry.entries()].filter(([, timer]) => timer.isRunning()));
 }
 
 /**

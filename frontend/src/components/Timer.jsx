@@ -105,7 +105,7 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
     if (!taskId) return;
     
     timerRef.current = getTimer(taskId);
-    setTime(timerRef.current.getTimeSpent() || initialTime);
+    setTime(timerRef.current.getTimeSpent());
     setIsRunning(timerRef.current.isRunning());
 
     // Cleanup on unmount or taskId change only

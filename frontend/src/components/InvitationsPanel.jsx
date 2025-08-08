@@ -97,12 +97,6 @@ const ActionButton = styled.button`
   }
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 16px;
-  color: #666;
-  font-size: 0.9rem;
-`;
 
 const InvitationsPanel = () => {
   const { 

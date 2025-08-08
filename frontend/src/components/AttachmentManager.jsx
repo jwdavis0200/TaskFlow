@@ -5,7 +5,6 @@ import {
   validateFiles, 
   formatFileSize, 
   getFileIcon,
-  uploadTaskAttachment,
   deleteTaskAttachment,
   downloadAttachment
 } from '../services/storage';
@@ -157,7 +156,7 @@ const AttachmentManager = ({
   const removeTaskAttachment = useStore((state) => state.removeTaskAttachment);
   
   const [pendingFiles, setPendingFiles] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadProgress] = useState({});
   const [errors, setErrors] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);

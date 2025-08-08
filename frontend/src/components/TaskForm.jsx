@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../store";
 import { formatDateForInput, createDateFromInput } from "../utils/dateUtils";
 import {
@@ -46,7 +46,7 @@ const TaskForm = ({ task, onClose }) => {
     
     for (const pendingFile of pendingFilesToUpload) {
       try {
-        const result = await uploadTaskAttachment(taskId, pendingFile.file, (progress) => {
+        const result = await uploadTaskAttachment(taskId, pendingFile.file, () => {
         });
         
         successfulUploads.push({ fileId: pendingFile.id, result });
@@ -85,7 +85,7 @@ const TaskForm = ({ task, onClose }) => {
     ) {
       setColumnId(selectedBoard.columns[0]._id);
     }
-  }, [selectedBoard?.columns, task]);
+  }, [selectedBoard, task]);
 
 
   const handleSubmit = async (e) => {

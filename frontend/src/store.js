@@ -7,7 +7,6 @@ import {
   createBoard,
   updateBoard,
   deleteBoard,
-  fetchTasks,
   createTask,
   updateTask as updateTaskAPI,
   deleteTask,
@@ -368,7 +367,7 @@ export const useStore = create((set, get) => ({
           ...column,
           _id: column.id,
           // Normalize tasks and keep them in their current column
-          tasks: (column.tasks || []).map((task, _index) => {
+          tasks: (column.tasks || []).map((task) => {
             return {
               ...task,
               _id: task.id || task._id,

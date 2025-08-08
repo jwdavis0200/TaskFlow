@@ -123,7 +123,7 @@ const BoardItemComponent = ({ board, projectId }) => {
         });
         // Reload boards to reflect changes
         loadBoards(projectId);
-      } catch (error) {
+      } catch {
         alert('Failed to update board. Please try again.');
       }
     }
@@ -135,7 +135,7 @@ const BoardItemComponent = ({ board, projectId }) => {
       try {
         await deleteBoard(projectId, board._id);
         // State is automatically updated by deleteBoard in store
-      } catch (error) {
+      } catch {
         alert('Failed to delete board. Please try again.');
       }
     }

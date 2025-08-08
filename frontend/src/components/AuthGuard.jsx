@@ -389,7 +389,6 @@ const RequirementItem = styled.div`
 
 const AuthGuard = ({ children }) => {
   const { 
-    user, 
     isAuthenticated, 
     authLoading, 
     signInUser,

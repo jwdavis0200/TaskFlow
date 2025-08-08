@@ -90,7 +90,7 @@ const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = f
     }
   }, []);
 
-  const handlePointerMove = useCallback((e) => {
+  const handlePointerMove = useCallback(() => {
     if (isPointerDown && !isDragging) {
       // First movement after pointer down = drag detected
       setIsDragging(true);
