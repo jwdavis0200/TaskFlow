@@ -40,17 +40,13 @@ const TaskForm = ({ task, onClose }) => {
   const clearAttachmentErrors = () => setAttachmentErrors([]);
   
   // Handle file uploads with progress tracking and proper error handling
-  const handleUploadRequest = async (pendingFilesToUpload, taskId, onProgressUpdate) => {
+  const handleUploadRequest = async (pendingFilesToUpload, taskId) => {
     const uploadErrors = [];
     const successfulUploads = [];
     
     for (const pendingFile of pendingFilesToUpload) {
       try {
         const result = await uploadTaskAttachment(taskId, pendingFile.file, (progress) => {
-          // Pass progress back to AttachmentManager
-          if (onProgressUpdate) {
-            onProgressUpdate(pendingFile.id, progress);
-          }
         });
         
         successfulUploads.push({ fileId: pendingFile.id, result });
@@ -62,7 +58,6 @@ const TaskForm = ({ task, onClose }) => {
       }
     }
     
-    // Return results instead of throwing immediately - let caller decide
     return {
       successful: successfulUploads,
       failed: uploadErrors,
@@ -143,7 +138,7 @@ const TaskForm = ({ task, onClose }) => {
           try {
             const uploadResults = await handleUploadRequest(
               pendingFiles, 
-              task._id,
+              task._id
             );
             
             if (uploadResults.failed.length > 0 && uploadResults.allFailed) {
@@ -181,7 +176,7 @@ const TaskForm = ({ task, onClose }) => {
           try {
             const uploadResults = await handleUploadRequest(
               pendingFiles, 
-              createdTask._id, 
+              createdTask._id
             );
             
             if (uploadResults.failed.length > 0 && uploadResults.allFailed) {
