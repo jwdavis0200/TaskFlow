@@ -66,7 +66,7 @@ exports.sendTaskNotification = onDocumentUpdated('tasks/{taskId}', async (event)
 /**
  * Send daily due date reminders
  */
-exports.sendDueDateReminder = onSchedule('every day 09:00', async (event) => {
+exports.sendDueDateReminder = onSchedule('every day 09:00', async (_event) => {
   try {
     const db = admin.firestore();
     const messaging = admin.messaging();

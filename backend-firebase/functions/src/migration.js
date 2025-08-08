@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { FieldValue, Timestamp } = require('firebase-admin/firestore');
+const { FieldValue } = require('firebase-admin/firestore');
 const { ROLES, validateAuth } = require('./middleware/auth');
 
 /**
@@ -177,7 +177,7 @@ exports.migrateMyProjectsToRBAC = onCall(async (request) => {
 /**
  * Validate a single project for migration readiness
  */
-async function validateProjectForMigration(projectData, projectId, db) {
+async function validateProjectForMigration(projectData, _projectId, _db) {
   const validation = {
     isValid: true,
     errors: [],
