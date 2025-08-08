@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getTimer, removeTimer } from "../utils/timer";
+import { startTimer as startTimerAPI, stopTimer as stopTimerAPI } from "../services/api.js";
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import { PlayArrow, Pause, Replay } from "@mui/icons-material";
@@ -96,6 +97,8 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
   const [time, setTime] = useState(initialTime); // time in milliseconds
   const [isRunning, setIsRunning] = useState(false);
   const timerRef = useRef(null);
+  const suppressCompleteRef = useRef(false);
+  const runBaselineRef = useRef(0); // tracks time value at start to compute elapsed delta
 
   // Initialize timer instance and cleanup on unmount
   useEffect(() => {
@@ -133,8 +136,11 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
       .join(":");
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!timerRef.current || isRunning) return;
+
+    // Establish baseline so we can send only delta to backend on stop
+    runBaselineRef.current = time;
 
     timerRef.current.start(
       time,
@@ -144,39 +150,57 @@ const Timer = ({ taskId, initialTime = 0, onTimeUpdate, onTimerComplete }) => {
           onTimeUpdate(taskId, timeSpent);
         }
       },
-      () => {
+      async () => {
         setIsRunning(false);
-        if (onTimerComplete) {
-          const currentTime = timerRef.current?.getTimeSpent() || time;
-          onTimerComplete(taskId, currentTime);
+        const currentTime = timerRef.current?.getTimeSpent() || time;
+        const elapsedDelta = Math.max(0, currentTime - (runBaselineRef.current || 0));
+        try {
+          if (!suppressCompleteRef.current) {
+            await stopTimerAPI(taskId, elapsedDelta);
+          }
+        } catch (error) {
+          console.error('Error stopping timer (API):', error);
+        } finally {
+          // Always reset the suppression flag after a completion cycle
+          suppressCompleteRef.current = false;
         }
+        if (onTimerComplete) onTimerComplete(taskId, currentTime);
       }
     );
     setIsRunning(true);
+
+    // Notify backend that the timer has started
+    try {
+      await startTimerAPI(taskId);
+    } catch (error) {
+      console.error('Error starting timer (API):', error);
+      // Revert local timer state if backend start fails
+      suppressCompleteRef.current = true; // prevent onComplete from sending stop
+      timerRef.current.stop();
+      setIsRunning(false);
+    }
   };
 
   const handleStop = () => {
     if (!timerRef.current) return;
     
-    const currentTime = timerRef.current.getTimeSpent();
+    // Do not call API here; onComplete handler will handle persistence
     timerRef.current.stop();
     setIsRunning(false);
-    i
-    // Call completion callback with final time - this is the authoritative update
-    if (onTimerComplete) {
-      onTimerComplete(taskId, currentTime);
-    }
   };
 
   const handleReset = () => {
     if (!timerRef.current) return;
-    
-    timerRef.current.reset();
-    setTime(0);
+    // Suppress the onComplete side-effect since this is a reset
+    suppressCompleteRef.current = true;
+    timerRef.current.stop();
     setIsRunning(false);
-    if (onTimeUpdate) {
-      onTimeUpdate(taskId, 0);
-    }
+    setTime(0);
+    if (onTimeUpdate) onTimeUpdate(taskId, 0);
+    // Persist reset to backend as stopped with 0 elapsed
+    stopTimerAPI(taskId, 0).catch((error) => {
+      console.error('Error resetting timer (API):', error);
+    });
   };
 
   return (

@@ -177,25 +177,26 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
   // State for delete confirmation modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const updateTask = useStore((state) => state.updateTask);
+  const applyTaskTimerUpdate = useStore((state) => state.applyTaskTimerUpdate);
   const deleteTask = useStore((state) => state.deleteTask);
   const canEditTasks = useStore((state) => state.canEditTasks);
   const setDragInProgress = useStore((state) => state.setDragInProgress);
 
   // Handler for time updates from the Timer component
   const handleTimeUpdate = (taskId, newTimeSpent) => {
-    updateTask(projectId, boardId, columnId, taskId, {
+    // Only update local UI state; backend persistence is handled by timer API
+    applyTaskTimerUpdate(boardId, columnId, taskId, {
       timeSpent: newTimeSpent,
-      isRunning: true
+      isRunning: true,
     });
   };
 
   // Handler for timer completion from the Timer component
   const handleTimerComplete = (taskId, finalTime) => {
-    updateTask(projectId, boardId, columnId, taskId, {
+    // Local state update to reflect stopped state; backend already updated via API
+    applyTaskTimerUpdate(boardId, columnId, taskId, {
       isRunning: false,
-      timeSpent: finalTime // Use final time from timer (authoritative)
+      timeSpent: finalTime,
     });
   };
 

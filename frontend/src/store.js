@@ -476,6 +476,42 @@ export const useStore = create((set, get) => ({
     set({ selectedBoard: board });
   },
   // Task Actions
+  // Local-only timer state updates (no network call)
+  applyTaskTimerUpdate: (boardId, columnId, taskId, updates) => {
+    set((state) => {
+      const updatedBoards = state.boards.map((board) => {
+        if (board._id !== boardId) return board;
+        return {
+          ...board,
+          columns: board.columns.map((column) => {
+            if (column._id !== columnId) return column;
+            return {
+              ...column,
+              tasks: column.tasks.map((task) =>
+                task._id === taskId ? { ...task, ...updates } : task
+              ),
+            };
+          }),
+        };
+      });
+      const updatedSelectedBoard =
+        state.selectedBoard && state.selectedBoard._id === boardId
+          ? {
+              ...state.selectedBoard,
+              columns: state.selectedBoard.columns.map((column) => {
+                if (column._id !== columnId) return column;
+                return {
+                  ...column,
+                  tasks: column.tasks.map((task) =>
+                    task._id === taskId ? { ...task, ...updates } : task
+                  ),
+                };
+              }),
+            }
+          : state.selectedBoard;
+      return { boards: updatedBoards, selectedBoard: updatedSelectedBoard };
+    });
+  },
   addTask: async (projectId, boardId, columnId, taskData) => {
     set({ loading: true, error: null });
     try {
