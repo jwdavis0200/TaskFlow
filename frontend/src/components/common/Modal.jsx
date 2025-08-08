@@ -30,12 +30,15 @@ const ModalContent = styled.div`
   padding: 0;
   max-width: ${props => props.wide ? '800px' : '480px'};
   width: 90%;
-  max-height: 85vh;
+  max-height: ${props => props.tall ? '95vh' : '85vh'};
+  height: ${props => props.tall ? '90vh' : 'auto'};
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.3s ease-out;
   margin: 2vh auto;
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   @keyframes modalSlideIn {
     from {
@@ -49,14 +52,13 @@ const ModalContent = styled.div`
   }
 
   @media (hover: none) and (pointer: coarse), (max-width: 768px) {
-    max-height: 80vh;
-    margin: 10vh 2%;
+    max-height: ${props => props.tall ? '96vh' : '80vh'};
+    height: ${props => props.tall ? '92vh' : 'auto'};
+    margin: 2vh 2%;
     width: 96%;
     max-width: none;
     min-width: 0;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
   }
 
   /* Ensure scrolling works properly */
@@ -79,7 +81,7 @@ const ModalContent = styled.div`
   }
 `;
 
-const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = false }) => {
+const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = false, tall = false }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isPointerDown, setIsPointerDown] = useState(false);
 
@@ -129,7 +131,7 @@ const Modal = ({ isOpen, onClose, children, closeOnOverlayClick = true, wide = f
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <ModalContent wide={wide}>
+      <ModalContent role="dialog" aria-modal="true" wide={wide} tall={tall}>
         {children}
       </ModalContent>
     </ModalOverlay>

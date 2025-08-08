@@ -10,6 +10,8 @@ import {
   createTask,
   updateTask as updateTaskAPI,
   deleteTask,
+  getBoardMessages as getBoardMessagesAPI,
+  sendBoardMessage as sendBoardMessageAPI,
   inviteUserToProjectAPI,
   getMyInvitationsAPI,
   acceptProjectInvitationAPI,
@@ -143,6 +145,7 @@ export const useStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   authLoading: true,
+  userEmail: null,
 
   // State for Projects
   projects: [],
@@ -160,6 +163,10 @@ export const useStore = create((set, get) => ({
   projectMembers: [], // Current project member details
   invitations: [], // User's pending invitations
   collaborationLoading: false,
+
+  // Chat state per-board
+  chatMessages: {}, // Map boardId -> array of messages
+  chatLoading: false,
   
   // RBAC state, user-specific - maps ALL projects to CURRENT user's role
   userRoles: {}, // Map of projectId -> user's role in that project
@@ -180,12 +187,12 @@ export const useStore = create((set, get) => ({
   setError: (error) => set({ error }),
 
   // Auth Actions
-  setUser: (user) => set({ user, isAuthenticated: !!user, authLoading: false }),
+  setUser: (user) => set({ user, isAuthenticated: !!user, authLoading: false, userEmail: user?.email || null }),
   signInUser: async (email, password) => {
     try {
       set({ authLoading: true });
       const user = await signIn(email, password);
-      set({ user, isAuthenticated: true, authLoading: false });
+      set({ user, isAuthenticated: true, authLoading: false, userEmail: user?.email || null });
       return user;
     } catch (error) {
       console.error('Error signing in:', error);
@@ -197,7 +204,7 @@ export const useStore = create((set, get) => ({
     try {
       set({ authLoading: true });
       const user = await signUp(email, password);
-      set({ user, isAuthenticated: true, authLoading: false });
+      set({ user, isAuthenticated: true, authLoading: false, userEmail: user?.email || null });
       return user;
     } catch (error) {
       console.error('Error signing up:', error);
@@ -211,6 +218,7 @@ export const useStore = create((set, get) => ({
       set({ 
         user: null, 
         isAuthenticated: false,
+        userEmail: null,
         projects: [],
         selectedProject: null,
         boards: [],
@@ -228,12 +236,12 @@ export const useStore = create((set, get) => ({
     return onAuthStateChange((user) => {
       // Only authenticate non-anonymous users
       if (user && !user.isAnonymous) {
-        set({ user, isAuthenticated: true, authLoading: false });
+        set({ user, isAuthenticated: true, authLoading: false, userEmail: user.email || null });
         // Load projects when user is authenticated without blocking
         get().loadProjects();
       } else {
         // Sign out anonymous users or null users
-        set({ user: null, isAuthenticated: false, authLoading: false });
+        set({ user: null, isAuthenticated: false, authLoading: false, userEmail: null });
       }
     });
   },
@@ -802,6 +810,42 @@ export const useStore = create((set, get) => ({
           : state.selectedBoard,
     }));
   },
+
+  // Chat Actions
+  loadBoardMessages: async (boardId) => {
+    set({ chatLoading: true });
+    try {
+      const result = await getBoardMessagesAPI(boardId);
+      // console.debug('Chat: getBoardMessages result', result);
+      set((state) => ({
+        chatMessages: { ...state.chatMessages, [boardId]: (result?.messages || []).map((m) => ({
+          ...m,
+          createdAt: safeCreateDate(m.createdAt)
+        })) },
+        chatLoading: false,
+      }));
+    } catch (error) {
+      toastService.handleError(error, 'load chat messages');
+      set({ chatLoading: false });
+    }
+  },
+  sendBoardMessage: async (boardId, content) => {
+    try {
+      const saved = await sendBoardMessageAPI(boardId, content);
+      // console.debug('Chat: sendBoardMessage result', saved);
+      const normalized = { ...saved, createdAt: safeCreateDate(saved.createdAt) };
+      set((state) => ({
+        chatMessages: {
+          ...state.chatMessages,
+          [boardId]: [...(state.chatMessages[boardId] || []), normalized]
+        }
+      }));
+      return normalized;
+    } catch (error) {
+      toastService.handleError(error, 'send message');
+      throw error;
+    }
+  },
   moveTask: async (taskId, destColumnId, projectId, boardId) => {
     const state = get();
     
@@ -1000,6 +1044,9 @@ export const useStore = create((set, get) => ({
     if (theme !== 'light' && theme !== 'dark') return;
     set({ resolvedTheme: theme });
   },
+
+  // Convenience selector for current user's email
+  getUserEmail: () => get().userEmail,
 
   // RBAC Helper Functions (UI logic only - server enforces security)
   getUserRole: (projectId) => {

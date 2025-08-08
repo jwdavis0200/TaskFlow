@@ -264,3 +264,26 @@ export const getAttachmentDownloadURL = async (taskId, attachmentId) => {
     throw error;
   }
 };
+
+// Board Chat API
+export const getBoardMessages = async (boardId, options = {}) => {
+  try {
+    const callable = httpsCallable(functions, 'getBoardMessages');
+    const result = await callable({ boardId, ...options });
+    return result.data; // { messages }
+  } catch (error) {
+    console.error('API Error getting board messages:', error);
+    throw error;
+  }
+};
+
+export const sendBoardMessage = async (boardId, content) => {
+  try {
+    const callable = httpsCallable(functions, 'sendBoardMessage');
+    const result = await callable({ boardId, content });
+    return result.data; // saved message object
+  } catch (error) {
+    console.error('API Error sending board message:', error);
+    throw error;
+  }
+};

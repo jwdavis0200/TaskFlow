@@ -29,6 +29,14 @@
       ]
     },
     {
+      "collectionGroup": "board_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "boardId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [

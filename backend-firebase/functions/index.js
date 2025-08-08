@@ -13,6 +13,7 @@ const boards = require('./src/boards');
 const tasks = require('./src/tasks');
 const notifications = require('./src/notifications');
 const migration = require('./src/migration');
+const chat = require('./src/chat');
 
 // Export projects functions
 exports.getProjects = projects.getProjects;
@@ -60,3 +61,7 @@ exports.getAttachmentDownloadURL = tasks.getAttachmentDownloadURL;
 // Export notification functions
 exports.sendTaskNotification = notifications.sendTaskNotification;
 exports.sendDueDateReminder = notifications.sendDueDateReminder;
+
+// Export chat functions
+exports.getBoardMessages = chat.getBoardMessages;
+exports.sendBoardMessage = chat.sendBoardMessage;

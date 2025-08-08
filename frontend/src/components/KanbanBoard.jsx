@@ -6,6 +6,7 @@ import Column from "./Column";
 import TaskForm from "./TaskForm";
 import Modal from "./common/Modal";
 import LoadingSpinner from "./common/LoadingSpinner";
+import ChatModal from "./ChatModal";
 import { useStore } from "../store";
 
 // Styled Components
@@ -80,6 +81,30 @@ const AddTaskButton = styled.button`
   }
 `;
 
+const ChatButton = styled.button`
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  margin-right: 10px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+    background: linear-gradient(45deg, #764ba2, #667eea);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
 const ColumnsContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -151,6 +176,7 @@ const KanbanBoard = () => {
   const [selectedTask, setSelectedTask] = useState(null); // For editing existing tasks
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
   const [hasLoadedBoards, setHasLoadedBoards] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -304,11 +330,14 @@ const KanbanBoard = () => {
       <BoardContainer>
         <Header>
           <Title>{selectedProject?.name || "Project"} - {selectedBoard.name || "Kanban Board"}</Title>
-          {canEditTasks(selectedProject?._id) && (
-            <AddTaskButton onClick={() => handleOpenTaskForm()}>
-              + Add New Task
-            </AddTaskButton>
-          )}
+          <div>
+            <ChatButton onClick={() => setIsChatOpen(true)}>Chat</ChatButton>
+            {canEditTasks(selectedProject?._id) && (
+              <AddTaskButton onClick={() => handleOpenTaskForm()}>
+                + Add New Task
+              </AddTaskButton>
+            )}
+          </div>
         </Header>
         <ColumnsContainer>
           {selectedBoard.columns.map((column) => (
@@ -327,6 +356,13 @@ const KanbanBoard = () => {
         >
           <TaskForm task={selectedTask} onClose={handleCloseTaskForm} />
         </Modal>
+        <ChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          boardId={selectedBoard._id}
+          boardName={selectedBoard.name}
+          projectId={selectedProject?._id || projects[0]?._id}
+        />
       </BoardContainer>
     </DndProvider>
   );
