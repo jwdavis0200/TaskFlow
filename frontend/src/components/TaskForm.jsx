@@ -39,7 +39,7 @@ const TaskForm = ({ task, onClose }) => {
   // Clear attachment errors when starting new operations
   const clearAttachmentErrors = () => setAttachmentErrors([]);
   
-  // Handle file uploads with progress tracking and proper error handling
+  // Handle file uploads callback with progress tracking and proper error handling
   const handleUploadRequest = async (pendingFilesToUpload, taskId) => {
     const uploadErrors = [];
     const successfulUploads = [];
@@ -54,7 +54,7 @@ const TaskForm = ({ task, onClose }) => {
       } catch (uploadError) {
         console.error("TaskForm: Failed to upload:", pendingFile.fileName, uploadError);
         const errorMessage = `Failed to upload ${pendingFile.fileName}: ${uploadError.message}`;
-        uploadErrors.push({ fileId: pendingFile.id, fileName: pendingFile.fileName, error: uploadError.message });
+        uploadErrors.push({ fileId: pendingFile.id, fileName: pendingFile.fileName, error: errorMessage });
       }
     }
     
@@ -291,8 +291,6 @@ const TaskForm = ({ task, onClose }) => {
             existingAttachments={task?.attachments || []}
             disabled={isSubmitting}
             onPendingFilesChange={setPendingFiles}
-            onUploadRequest={handleUploadRequest}
-            onUploadError={(error) => setAttachmentErrors([error.message])}
           />
           {attachmentErrors.length > 0 && (
             <div style={{ 

@@ -148,13 +148,8 @@ const AttachmentManager = ({
   taskId = null, // null for new tasks, taskId for existing tasks
   boardId = null, // needed for optimistic updates
   existingAttachments = [], 
-  onAttachmentsChange,
   disabled = false,
-  // New callback props for migration from forwardRef
   onPendingFilesChange = null, // sends pending files to parent
-  onUploadRequest = null, // parent provides upload handler
-  onUploadSuccess = null, // upload success callback
-  onUploadError = null // upload error callback
 }) => {
   
   // Store methods for optimistic updates
@@ -170,15 +165,10 @@ const AttachmentManager = ({
   const allAttachments = [...(Array.isArray(existingAttachments) ? existingAttachments : []), ...pendingFiles];
   const totalFiles = allAttachments.length;
   
-  // Helper to update parent component (prioritizes new callback pattern over legacy)
+  // Helper to update parent component with pending files
   const updateParent = (newPendingFiles) => {
-    // Use new callback pattern if available
     if (onPendingFilesChange) {
       onPendingFilesChange(newPendingFiles);
-    } 
-    // Fallback to legacy pattern only for new tasks and if new pattern not available
-    else if (onAttachmentsChange && !taskId) {
-      onAttachmentsChange(newPendingFiles);
     }
   };
 
@@ -224,160 +214,6 @@ const AttachmentManager = ({
     updateParent(updatedPendingFiles);
   };
 
-  // Method to upload pending files with proper progress tracking and partial failure handling
-  const uploadPendingFiles = async (overrideTaskId = null, overrideBoardId = null) => {
-    // Use provided parameters for new task flow, fallback to props for existing task flow
-    const uploadTaskId = overrideTaskId || taskId;
-    const uploadBoardId = overrideBoardId || boardId;
-    const pendingFilesToUpload = pendingFiles.filter(pf => pf.status === 'ready');
-    
-    if (pendingFilesToUpload.length === 0) {
-      // No files to upload, just return
-      return;
-    }
-
-    // Callback pattern: delegate to parent with proper progress tracking
-    if (onUploadRequest) {
-      try {
-        // Mark all files as uploading before starting
-        setPendingFiles(prev => 
-          prev.map(pf => 
-            pf.status === 'ready' 
-              ? { ...pf, status: 'uploading' }
-              : pf
-          )
-        );
-
-        const uploadResults = await onUploadRequest(
-          pendingFilesToUpload, 
-          uploadTaskId, 
-          uploadBoardId,
-          // Progress callback
-          (fileId, progress) => {
-            setUploadProgress(prev => ({
-              ...prev,
-              [fileId]: progress
-            }));
-          }
-        );
-
-        // Handle results based on success/failure
-        if (uploadResults && typeof uploadResults === 'object') {
-          // Remove successful uploads from pending files and add optimistic updates
-          if (uploadResults.successful && uploadResults.successful.length > 0) {
-            // Get the successfully uploaded files for optimistic updates
-            const successfulFiles = uploadResults.successful.map(s => {
-              const originalFile = pendingFilesToUpload.find(pf => pf.id === s.fileId);
-              return {
-                id: s.result?.id || `uploaded-${Date.now()}-${Math.random()}`, // Use server ID if available
-                fileName: originalFile.fileName,
-                fileSize: originalFile.fileSize,
-                mimeType: originalFile.mimeType,
-                downloadURL: s.result?.downloadURL || null,
-                storagePath: s.result?.storagePath || null,
-                uploadedAt: new Date().toISOString(),
-                uploadedBy: 'current-user' // Could be enhanced with actual user ID
-              };
-            });
-
-            // Optimistically update the store for existing tasks
-            if (uploadTaskId && uploadBoardId) {
-              successfulFiles.forEach(attachment => {
-                updateTaskAttachments(uploadBoardId, uploadTaskId, attachment);
-              });
-            }
-
-            // Remove successful files from pending
-            setPendingFiles(prev => prev.filter(pf => 
-              !uploadResults.successful.some(s => s.fileId === pf.id)
-            ));
-            
-            // Clear progress for successful files
-            const successfulIds = uploadResults.successful.map(s => s.fileId);
-            setUploadProgress(prev => {
-              const newProgress = { ...prev };
-              successfulIds.forEach(id => delete newProgress[id]);
-              return newProgress;
-            });
-          }
-
-          // Mark failed uploads as errored
-          if (uploadResults.failed && uploadResults.failed.length > 0) {
-            setPendingFiles(prev => 
-              prev.map(pf => {
-                const failedUpload = uploadResults.failed.find(f => f.fileId === pf.id);
-                return failedUpload 
-                  ? { ...pf, status: 'error', error: failedUpload.error }
-                  : pf;
-              })
-            );
-
-            // Clear progress for failed files
-            const failedIds = uploadResults.failed.map(f => f.fileId);
-            setUploadProgress(prev => {
-              const newProgress = { ...prev };
-              failedIds.forEach(id => delete newProgress[id]);
-              return newProgress;
-            });
-          }
-
-          // Call success callback if any files succeeded and clear errors
-          if (uploadResults.successful && uploadResults.successful.length > 0) {
-            // Clear errors for successfully uploaded files
-            setErrors(prev => prev.filter(error => 
-              !uploadResults.successful.some(s => error.includes(pendingFilesToUpload.find(pf => pf.id === s.fileId)?.fileName))
-            ));
-            
-            if (onUploadSuccess) {
-              onUploadSuccess();
-            }
-          }
-
-          // Call error callback if any files failed and add detailed error messages
-          if (uploadResults.failed && uploadResults.failed.length > 0) {
-            // Add specific error messages to the local error state
-            const newErrors = uploadResults.failed.map(f => `Failed to upload ${f.fileName}: ${f.error}`);
-            setErrors(prev => [...prev, ...newErrors]);
-            
-            if (onUploadError) {
-              const combinedError = new Error(uploadResults.failed.map(f => f.error).join('; '));
-              onUploadError(combinedError);
-            }
-          }
-
-          // Only throw if all uploads failed
-          if (uploadResults.allFailed) {
-            throw new Error(uploadResults.failed.map(f => f.error).join('; '));
-          }
-        } else {
-          // Legacy handling - clear all on success
-          setPendingFiles(prev => prev.filter(pf => pf.status !== 'uploading'));
-          setUploadProgress({});
-          if (onUploadSuccess) {
-            onUploadSuccess();
-          }
-        }
-      } catch (error) {
-        // Mark all uploading files as errored
-        setPendingFiles(prev => 
-          prev.map(pf => 
-            pf.status === 'uploading' 
-              ? { ...pf, status: 'error', error: error.message }
-              : pf
-          )
-        );
-        
-        // Clear progress for errored files
-        setUploadProgress({});
-        
-        if (onUploadError) {
-          onUploadError(error);
-        }
-        throw error; // Re-throw for backward compatibility
-      }
-    }
-  };
-
   const handleDelete = async (attachment, isPending = false) => {
     if (isPending) {
       // Remove from pending files
@@ -397,11 +233,7 @@ const AttachmentManager = ({
           await deleteTaskAttachment(taskId, attachment.id);
         }
         
-        // Fallback for new tasks - update parent component
-        if ((!boardId || !taskId) && onAttachmentsChange) {
-          const newAttachments = existingAttachments.filter(att => att.id !== attachment.id);
-          onAttachmentsChange(newAttachments);
-        }
+        // Note: For new tasks without IDs, deletion is only optimistic via store updates
       } catch (error) {
         // Rollback optimistic delete on error
         if (boardId && taskId) {
