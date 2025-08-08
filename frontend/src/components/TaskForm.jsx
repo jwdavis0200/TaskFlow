@@ -91,11 +91,6 @@ const TaskForm = ({ task, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      alert("Please enter a task title");
-      return;
-    }
-
     if (!selectedBoard || !projects.length) {
       alert("No board or project selected");
       return;
