@@ -13,11 +13,10 @@ const ModalContentInner = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface);
   border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
 `;
 
 const Header = styled.div`
@@ -25,16 +24,14 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 24px 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
+  color: #fff;
 `;
 
 const Title = styled.h2`
   margin: 0;
   font-size: 1.5rem;
-  color: white;
+  color: #fff;
   font-weight: 600;
 `;
 
@@ -43,13 +40,13 @@ const CloseButton = styled.button`
   border: none;
   cursor: pointer;
   padding: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   border-radius: 8px;
   transition: all 0.2s ease;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
-    color: white;
+    color: #fff;
     transform: scale(1.05);
   }
 `;
@@ -64,17 +61,17 @@ const Content = styled.div`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--scrollbar-track);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: var(--scrollbar-thumb);
   }
 `;
 
@@ -87,19 +84,17 @@ const MemberItem = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface-elevated-1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--color-surface-elevated-2);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
   }
 `;
 
@@ -113,11 +108,11 @@ const MemberAvatar = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #fff;
   font-weight: 600;
 `;
 
@@ -128,13 +123,13 @@ const MemberDetails = styled.div`
 
 const MemberEmail = styled.span`
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
 `;
 
 const MemberRole = styled.span`
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -147,33 +142,31 @@ const MemberActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 35%, transparent);
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 8px;
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 12px;
   font-weight: 500;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   
   &:hover {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
+    background: linear-gradient(45deg, var(--brand-gradient-start), var(--brand-gradient-end));
+    color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px color-mix(in oklab, var(--brand-gradient-start) 30%, transparent);
   }
   
   &.danger {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--color-danger-text);
+    border-color: color-mix(in oklab, var(--color-danger-text) 30%, transparent);
     
     &:hover {
-      background: linear-gradient(45deg, #ef4444, #dc2626);
-      color: white;
-      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      background: linear-gradient(45deg, color-mix(in oklab, var(--color-danger-text) 90%, #000), var(--color-danger-text));
+      color: #fff;
+      box-shadow: 0 4px 15px color-mix(in oklab, var(--color-danger-text) 30%, transparent);
     }
   }
 `;
@@ -181,11 +174,10 @@ const ActionButton = styled.button`
 const InviteSection = styled.div`
   padding-top: 24px;
   margin-top: 24px;
-  background: rgba(71, 155, 165, 0.1);
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
   border-radius: 12px;
   padding: 24px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border);
 `;
 
 const InviteHeader = styled.div`
@@ -198,7 +190,7 @@ const InviteHeader = styled.div`
 const InviteTitle = styled.h3`
   margin: 0;
   font-size: 1.1rem;
-  color: #667eea;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -206,37 +198,31 @@ const InviteTitle = styled.h3`
 `;
 
 const ErrorMessage = styled.p`
-  color: #dc2626;
-  background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(185, 28, 28, 0.05));
-  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: var(--color-danger-text);
+  background: color-mix(in oklab, var(--color-danger-text) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-danger-text) 30%, transparent);
   padding: 16px;
   border-radius: 12px;
   font-size: 0.9rem;
   margin-top: 16px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-weight: 500;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 48px 32px;
-  color: #667eea;
-  background: rgba(255, 255, 255, 0.6);
+  color: var(--color-primary);
+  background: var(--color-surface);
   border-radius: 12px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-weight: 500;
 `;
 
 const LoadingState = styled.div`
   text-align: center;
   padding: 32px 24px;
-  color: #667eea;
-  background: rgba(255, 255, 255, 0.6);
+  color: var(--color-primary);
+  background: var(--color-surface);
   border-radius: 12px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-weight: 500;
 `;
 

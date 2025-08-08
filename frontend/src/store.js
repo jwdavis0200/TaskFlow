@@ -169,6 +169,9 @@ export const useStore = create((set, get) => ({
   isSidebarOpen: JSON.parse(localStorage.getItem('taskflow-sidebar-open') ?? 'true'),
   isModalOpen: false,
   modalContent: null, // e.g., 'addProject', 'addTask', 'editBoard'
+  // Theme State
+  themePreference: 'system', // 'system' | 'light' | 'dark'
+  resolvedTheme: undefined,  // 'light' | 'dark'
   
   // Drag & Drop State
   isDragInProgress: false,
@@ -986,6 +989,17 @@ export const useStore = create((set, get) => ({
   
   // Drag & Drop Actions
   setDragInProgress: (isDragging) => set({ isDragInProgress: isDragging }),
+
+  // Theme Actions
+  setThemePreference: (preference) => {
+    if (preference !== 'system' && preference !== 'light' && preference !== 'dark') return;
+    localStorage.setItem('taskflow-theme-preference', preference);
+    set({ themePreference: preference });
+  },
+  setResolvedTheme: (theme) => {
+    if (theme !== 'light' && theme !== 'dark') return;
+    set({ resolvedTheme: theme });
+  },
 
   // RBAC Helper Functions (UI logic only - server enforces security)
   getUserRole: (projectId) => {

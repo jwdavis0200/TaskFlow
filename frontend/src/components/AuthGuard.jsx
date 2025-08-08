@@ -14,7 +14,7 @@ const AuthContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--app-background);
   padding: 16px;
   box-sizing: border-box;
   
@@ -34,13 +34,13 @@ const AuthContainer = styled.div`
 `;
 
 const AuthCard = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   overflow: hidden;
   width: 100%;
   max-width: 400px;
   max-height: 90vh;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px var(--color-overlay);
   position: relative;
   box-sizing: border-box;
   
@@ -58,7 +58,7 @@ const AuthCard = styled.div`
 `;
 
 const AuthHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
   color: white;
   padding: 24px 20px;
   text-align: center;
@@ -91,7 +91,7 @@ const AuthBody = styled.div`
 `;
 
 const AuthDescription = styled.p`
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 16px;
   line-height: 1.5;
   margin-bottom: 20px;
@@ -116,14 +116,14 @@ const AuthButton = styled.button`
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: linear-gradient(45deg, #667eea, #764ba2);
+  background: linear-gradient(45deg, var(--brand-gradient-start), var(--brand-gradient-end));
   color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary) 30%, transparent);
   box-sizing: border-box;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
   }
 
   &:active:not(:disabled) {
@@ -132,7 +132,7 @@ const AuthButton = styled.button`
 
   &:focus {
     outline: none;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3), 0 0 0 3px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary) 30%, transparent), 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
   }
 
   &:disabled {
@@ -155,7 +155,7 @@ const LoadingContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+  background: var(--app-background);
   position: fixed;
   top: 0;
   left: 0;
@@ -170,24 +170,24 @@ const LoadingContainer = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+    background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--color-surface) 10%, transparent) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, color-mix(in srgb, var(--color-surface) 8%, transparent) 0%, transparent 50%);
     pointer-events: none;
   }
 `;
 
 const LoadingCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-border) 20%, transparent);
   border-radius: 24px;
   padding: 48px 40px;
   text-align: center;
   box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.15),
-    0 12px 24px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 25px 50px color-mix(in srgb, var(--color-overlay) 15%, transparent),
+    0 12px 24px color-mix(in srgb, var(--color-overlay) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 60%, transparent);
   position: relative;
   z-index: 10;
   max-width: 400px;
@@ -204,8 +204,8 @@ const LoadingCard = styled.div`
     right: 0;
     bottom: 0;
     background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.05) 0%, 
-      rgba(29, 78, 216, 0.02) 100%);
+      color-mix(in srgb, var(--color-primary) 5%, transparent) 0%, 
+      color-mix(in srgb, var(--color-primary) 2%, transparent) 100%);
     border-radius: 24px;
     pointer-events: none;
   }
@@ -225,7 +225,7 @@ const LoadingCard = styled.div`
 `;
 
 const LoadingText = styled.p`
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 18px;
   font-weight: 500;
   margin: 0;
@@ -261,28 +261,28 @@ const LoadingText = styled.p`
 const AuthInput = styled.input`
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
   font-family: inherit;
   margin-bottom: 16px;
   transition: all 0.2s ease;
   box-sizing: border-box;
-  background: #ffffff;
-  color: #333;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
 
   &:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
   }
 
   &:hover {
-    border-color: #d1d5db;
+    border-color: color-mix(in srgb, var(--color-border) 80%, var(--color-text-secondary));
   }
 
   &::placeholder {
-    color: #9ca3af;
+    color: var(--color-text-secondary);
     font-weight: 400;
   }
 
@@ -300,19 +300,19 @@ const AuthForm = styled.form`
 const AuthLink = styled.button`
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--color-primary);
   cursor: pointer;
   text-decoration: underline;
   font-size: 14px;
   margin-top: 16px;
 
   &:hover {
-    color: #764ba2;
+    color: var(--color-primary-hover);
   }
 `;
 
 const ErrorMessage = styled.div`
-  color: #e74c3c;
+  color: var(--color-danger-text);
   font-size: 14px;
   margin-bottom: 16px;
   text-align: center;
@@ -329,15 +329,15 @@ const ValidationIndicator = styled.div`
   box-sizing: border-box;
   
   &.valid {
-    color: #27ae60;
+    color: var(--color-success-text);
   }
   
   &.invalid {
-    color: #e74c3c;
+    color: var(--color-danger-text);
   }
   
   &.neutral {
-    color: #666;
+    color: var(--color-text-secondary);
   }
 `;
 
@@ -347,11 +347,11 @@ const ValidationIcon = styled.span`
 `;
 
 const PasswordRequirements = styled.div`
-  background: #f8f9fa;
+  background: var(--color-surface-elevated-2);
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--color-primary);
   box-sizing: border-box;
   
   @media (max-width: 480px) {
@@ -373,11 +373,11 @@ const RequirementItem = styled.div`
   }
   
   &.met {
-    color: #27ae60;
+    color: var(--color-success-text);
   }
   
   &.unmet {
-    color: #e74c3c;
+    color: var(--color-danger-text);
   }
   
   @media (max-width: 480px) {

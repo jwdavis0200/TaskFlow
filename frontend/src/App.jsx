@@ -21,7 +21,8 @@ const globalStyles = css`
     width: 100% !important;
     height: 100% !important;
     overflow-x: hidden !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: var(--app-background);
+    color: var(--color-text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
       "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
       "Helvetica Neue", sans-serif !important;
@@ -58,10 +59,7 @@ const MainContent = styled.div`
   flex: 1;
   overflow: hidden;
   transition: margin-left 0.3s ease;
-  margin-left: 60px;
-  @media (hover: none) and (pointer: coarse), (max-width: 768px) {
-    margin-left: 0;
-  }
+  margin-left: 0;
 `;
 
 const MobileOverlay = styled.div`

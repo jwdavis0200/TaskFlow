@@ -40,6 +40,16 @@ const Title = styled.h1`
   margin: 0;
   font-size: 24px;
   font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 16px;
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+    margin-right: 12px;
+  }
 `;
 
 const AddTaskButton = styled.button`
@@ -90,8 +100,8 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--app-background);
+  color: var(--color-text-primary);
   font-size: 18px;
   font-weight: 500;
 `;
@@ -102,8 +112,8 @@ const EmptyStateContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--app-background);
+  color: var(--color-text-primary);
   text-align: center;
   padding: 20px;
 `;

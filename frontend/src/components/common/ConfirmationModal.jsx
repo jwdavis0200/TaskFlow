@@ -4,11 +4,12 @@ import LoadingSpinner from "./LoadingSpinner";
 import Modal from "./Modal";
 
 const ConfirmationContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface);
   border-radius: 16px;
   overflow: hidden;
   width: 100%;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 15px color-mix(in oklab, var(--color-text-primary) 15%, transparent);
+  border: 1px solid var(--color-border);
 `;
 
 const ConfirmationHeader = styled.div`
@@ -48,19 +49,19 @@ const ConfirmationBody = styled.div`
 
 const ConfirmationMessage = styled.p`
   margin: 0 0 18px 0;
-  color: #374151;
+  color: var(--color-text-primary);
   font-size: 15px;
   line-height: 1.5;
   font-weight: 500;
 `;
 
 const WarningText = styled.div`
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--color-warning-bg);
+  border: 1px solid color-mix(in oklab, var(--color-warning-text) 30%, transparent);
+  color: var(--color-warning-text);
   padding: 12px;
   border-radius: 8px;
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--color-warning-text);
   line-height: 1.4;
   position: relative;
   display: flex;
@@ -70,7 +71,7 @@ const WarningText = styled.div`
 const WarningIconWrapper = styled.div`
   margin-right: 8px;
   margin-top: 2px;
-  color: #991b1b;
+  color: var(--color-warning-text);
 `;
 
 const ConfirmationActions = styled.div`
@@ -111,13 +112,13 @@ const Button = styled.button`
 `;
 
 const CancelButton = styled(Button)`
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
+  background: var(--color-surface-elevated-1);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 
   &:hover:not(:disabled) {
-    background: #eeeeee;
-    border-color: #ccc;
+    background: var(--color-surface-elevated-2);
+    border-color: color-mix(in oklab, var(--color-border) 80%, var(--color-text-secondary));
   }
 `;
 

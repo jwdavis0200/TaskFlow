@@ -7,11 +7,11 @@ import { useStore } from "../store";
 import { formatDateForDisplay } from "../utils/dateUtils";
 
 const CardContainer = styled.div`
-  background: white;
+  background: var(--color-surface-elevated-2);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
   cursor: grab;
   transition: all 0.3s ease;
   opacity: ${(props) => (props.isDragging ? 0.5 : 1)};
@@ -30,7 +30,7 @@ const CardContainer = styled.div`
 
 const TaskTitle = styled.h4`
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
@@ -42,7 +42,7 @@ const TaskTitle = styled.h4`
 
 const TaskDescription = styled.p`
   margin: 0 0 12px 0;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.4;
   display: -webkit-box;
@@ -92,28 +92,28 @@ const getDueDateColors = (dueDate) => {
   
   if (diffDays === null) {
     return {
-      background: "#f5f5f5", // Invalid date - gray
-      color: "#666"
+      background: "var(--color-surface)",
+      color: "var(--color-text-secondary)"
     };
   }
   
   if (diffDays < 0) {
     return {
-      background: "#ffebee", // Overdue - light red
-      color: "#c62828"       // Overdue - red
+      background: "var(--color-danger-bg)",
+      color: "var(--color-danger-text)"
     };
   }
   
   if (diffDays <= 1) {
     return {
-      background: "#fff3e0", // Due soon - light orange
-      color: "#ef6c00"       // Due soon - orange
+      background: "var(--color-warning-bg)",
+      color: "var(--color-warning-text)"
     };
   }
   
   return {
-    background: "#e8f5e8", // Normal - light green
-    color: "#2e7d32"       // Normal - green
+    background: "var(--color-success-bg)",
+    color: "var(--color-success-text)"
   };
 };
 
@@ -126,25 +126,25 @@ const PriorityTag = styled(MetaTag)`
   background: ${(props) => {
     switch (props.priority?.toLowerCase()) {
       case "high":
-        return "#ffebee";
+        return "var(--color-danger-bg)";
       case "medium":
-        return "#fff3e0";
+        return "var(--color-warning-bg)";
       case "low":
-        return "#e8f5e8";
+        return "var(--color-success-bg)";
       default:
-        return "#f5f5f5";
+        return "var(--color-surface)";
     }
   }};
   color: ${(props) => {
     switch (props.priority?.toLowerCase()) {
       case "high":
-        return "#c62828";
+        return "var(--color-danger-text)";
       case "medium":
-        return "#ef6c00";
+        return "var(--color-warning-text)";
       case "low":
-        return "#2e7d32";
+        return "var(--color-success-text)";
       default:
-        return "#666";
+        return "var(--color-text-secondary)";
     }
   }};
 `;
@@ -279,7 +279,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
           </DueDateTag>
         )}
         {task.attachments && task.attachments.length > 0 && (
-          <MetaTag style={{ background: '#e8f5e8', color: '#2e7d32' }}>
+          <MetaTag style={{ background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}>
             📎 {task.attachments.length}
           </MetaTag>
         )}

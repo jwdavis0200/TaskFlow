@@ -1,27 +1,19 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
-import { FormGroup, Label, Input, Button, ErrorMessage } from './common/FormComponents';
+import { 
+  FormContainer,
+  FormGroup,
+  Label,
+  Input,
+  ErrorMessage,
+  FormActions,
+  PrimaryButton,
+  SecondaryButton,
+  Select,
+} from './common/FormComponents';
 
-const FormContainer = styled.div`
-  background: #f8f9fa;
+const Inner = styled.div`
   padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-`;
-
-const CancelButton = styled(Button)`
-  background: #6c757d;
-  color: white;
-  
-  &:hover {
-    background: #545b62;
-  }
 `;
 
 const InviteMemberForm = ({ onInvite, onCancel, loading }) => {
@@ -56,6 +48,7 @@ const InviteMemberForm = ({ onInvite, onCancel, loading }) => {
 
   return (
     <FormContainer>
+      <Inner>
       <form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="memberEmail">Email Address</Label>
@@ -72,41 +65,30 @@ const InviteMemberForm = ({ onInvite, onCancel, loading }) => {
         
         <FormGroup>
           <Label htmlFor="memberRole">Role</Label>
-          <select
+          <Select
             id="memberRole"
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '2px solid #e0e0e0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              background: 'white',
-              boxSizing: 'border-box'
-            }}
           >
             <option value="viewer">Viewer (Read-only)</option>
             <option value="editor">Editor (Can edit)</option>
             <option value="admin">Admin (Full access)</option>
-          </select>
+          </Select>
         </FormGroup>
         
         {error && <ErrorMessage>{error}</ErrorMessage>}
         
         <FormActions>
-          <Button type="submit" disabled={loading} style={{
-            background: '#007bff',
-            color: 'white'
-          }}>
+          <PrimaryButton type="submit" disabled={loading}>
             {loading ? 'Sending...' : 'Send Invitation'}
-          </Button>
-          <CancelButton type="button" onClick={onCancel} disabled={loading}>
+          </PrimaryButton>
+          <SecondaryButton type="button" onClick={onCancel} disabled={loading}>
             Cancel
-          </CancelButton>
+          </SecondaryButton>
         </FormActions>
       </form>
+      </Inner>
     </FormContainer>
   );
 };

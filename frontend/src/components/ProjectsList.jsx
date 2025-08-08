@@ -17,23 +17,23 @@ const ProjectsContainer = styled.div`
 `;
 
 const ProjectItem = styled.div`
-  background: white;
+  background: var(--color-surface-elevated-1);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   transition: all 0.2s ease;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     transform: translateY(-1px);
   }
 `;
 
 const ProjectHeader = styled.div`
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--color-surface-elevated-2);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -43,7 +43,7 @@ const ProjectHeader = styled.div`
 
 const ProjectName = styled.h3`
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
   cursor: pointer;
   transition: color 0.2s ease;
@@ -54,7 +54,7 @@ const ProjectName = styled.h3`
   hyphens: auto;
   
   &:hover {
-    color: #3b82f6;
+    color: var(--color-primary);
   }
 `;
 
@@ -70,7 +70,7 @@ const ProjectMeta = styled.div`
   gap: 8px;
   margin-top: 4px;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-secondary);
 `;
 
 const ProjectActions = styled.div`
@@ -88,32 +88,36 @@ const ActionButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const EditButton = styled(ActionButton)`
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: color-mix(in oklab, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
 
   &:hover {
-    background: #dbeafe;
+    background: color-mix(in oklab, var(--color-primary) 25%, transparent);
   }
 `;
 
 const DeleteButton = styled(ActionButton)`
-  background: #fef2f2;
-  color: #dc2626;
+  background: color-mix(in oklab, var(--color-danger-text) 15%, transparent);
+  color: var(--color-danger-text);
 
   &:hover {
-    background: #fee2e2;
+    background: color-mix(in oklab, var(--color-danger-text) 25%, transparent);
   }
 `;
 
 const AddBoardButton = styled(ActionButton)`
-  background: #f0fdf4;
-  color: #16a34a;
+  background: color-mix(in oklab, var(--color-success-text) 15%, transparent);
+  color: var(--color-success-text);
 
   &:hover {
-    background: #dcfce7;
+    background: color-mix(in oklab, var(--color-success-text) 25%, transparent);
   }
 `;
 
@@ -122,13 +126,13 @@ const ProjectContent = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-size: 14px;
   text-align: center;
   padding: 32px 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed var(--color-border);
 `;
 
 const LoadingState = styled.div`
@@ -137,10 +141,10 @@ const LoadingState = styled.div`
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   font-size: 14px;
   gap: 12px;
 `;

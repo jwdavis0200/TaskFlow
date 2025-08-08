@@ -9,11 +9,18 @@ const ToastContainer = styled.div`
   padding: 12px 16px;
   min-width: ${TOAST_CONFIG.dimensions.desktop.minWidth};
   max-width: ${TOAST_CONFIG.dimensions.desktop.maxWidth};
-  background: ${({ severity }) => TOAST_CONFIG.colors[severity]?.background || TOAST_CONFIG.colors.info.background};
-  color: ${({ severity }) => TOAST_CONFIG.colors[severity]?.text || TOAST_CONFIG.colors.info.text};
+  background: var(--color-surface-elevated-1);
+  color: var(--color-text-primary);
   border-radius: 12px;
-  border: 1px solid ${({ severity }) => TOAST_CONFIG.colors[severity]?.border || TOAST_CONFIG.colors.info.border};
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid ${({ severity }) => {
+    switch(severity) {
+      case 'success': return 'var(--color-success-text)';
+      case 'error': return 'var(--color-danger-text)';
+      case 'warning': return 'var(--color-warning-text)';
+      default: return 'var(--color-primary)';
+    }
+  }};
+  box-shadow: 0 8px 32px color-mix(in oklab, var(--color-text-primary) 20%, transparent);
   backdrop-filter: blur(10px);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -30,7 +37,7 @@ const ToastContainer = styled.div`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 40px color-mix(in oklab, var(--color-text-primary) 30%, transparent);
   }
 `;
 
@@ -41,7 +48,14 @@ const IconContainer = styled.div`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: ${({ severity }) => TOAST_CONFIG.colors[severity]?.icon || TOAST_CONFIG.colors.info.icon};
+  background: ${({ severity }) => {
+    switch(severity) {
+      case 'success': return 'var(--color-success-text)';
+      case 'error': return 'var(--color-danger-text)';
+      case 'warning': return 'var(--color-warning-text)';
+      default: return 'var(--color-primary)';
+    }
+  }};
   color: white;
   flex-shrink: 0;
   margin-top: 2px;
@@ -83,7 +97,7 @@ const CloseButton = styled.button`
   height: 20px;
   border: none;
   background: transparent;
-  color: #666;
+  color: var(--color-text-secondary);
   cursor: pointer;
   border-radius: 50%;
   flex-shrink: 0;
@@ -91,8 +105,8 @@ const CloseButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #333;
+    background: color-mix(in oklab, var(--color-text-primary) 10%, transparent);
+    color: var(--color-text-primary);
     transform: scale(1.1);
   }
 

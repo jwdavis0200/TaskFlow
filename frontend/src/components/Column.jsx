@@ -5,15 +5,14 @@ import TaskCard from "./TaskCard";
 import { useStore } from "../store";
 
 const ColumnContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface-elevated-1);
   border-radius: 12px;
   padding: 16px;
   min-height: 400px;
   max-height: calc(100vh - 120px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border: 2px solid transparent;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   word-wrap: break-word;
@@ -28,14 +27,14 @@ const ColumnContainer = styled.div`
   ${(props) =>
     props.isOver &&
     `
-    border-color: #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
+    border-color: var(--color-success-text);
+    background: color-mix(in oklab, var(--color-success-bg) 50%, transparent);
     transform: scale(1.02);
-    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+    box-shadow: 0 8px 25px color-mix(in oklab, var(--color-success-text) 20%, transparent);
   `}
 
   &:hover {
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
   }
 `;
 
@@ -45,12 +44,12 @@ const ColumnHeader = styled.div`
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--color-border);
 `;
 
 const ColumnTitle = styled.h3`
   margin: 0;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 18px;
   font-weight: 600;
   text-transform: uppercase;
@@ -68,8 +67,8 @@ const ColumnTitle = styled.h3`
 `;
 
 const TaskCount = styled.span`
-  background: #667eea;
-  color: white;
+  background: var(--brand-gradient-end);
+  color: #fff;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -93,16 +92,16 @@ const TasksContainer = styled.div`
   }
   
   &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--scrollbar-track);
     border-radius: 3px;
   }
   
   &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
     
     &:hover {
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--scrollbar-thumb);
     }
   }
 `;
@@ -113,10 +112,10 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: #999;
+  color: var(--color-text-secondary);
   font-style: italic;
   text-align: center;
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   margin-top: 20px;
 
@@ -128,7 +127,7 @@ const EmptyState = styled.div`
   svg {
     font-size: 32px;
     margin-bottom: 8px;
-    color: #666;
+    color: var(--color-text-secondary);
   }
 `;
 

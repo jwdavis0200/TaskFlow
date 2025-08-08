@@ -8,7 +8,7 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--color-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -25,7 +25,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 0;
   max-width: ${props => props.wide ? '800px' : '480px'};

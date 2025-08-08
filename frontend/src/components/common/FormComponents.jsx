@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 
 export const FormContainer = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
@@ -14,8 +14,8 @@ export const FormContainer = styled.div`
 `;
 
 export const FormHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
+  color: #fff;
   padding: 16px 20px;
   text-align: center;
 `;
@@ -54,7 +54,7 @@ export const FormContent = styled.div`
 export const Label = styled.label`
   display: block;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--color-text-primary);
   font-weight: 500;
   font-size: 14px;
 `;
@@ -62,7 +62,7 @@ export const Label = styled.label`
 export const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s ease;
@@ -70,24 +70,24 @@ export const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
   }
 
   &:hover {
-    border-color: #ccc;
+    border-color: color-mix(in oklab, var(--color-border) 60%, var(--color-text-secondary));
   }
 
   &.error {
-    border-color: #ff4757;
-    box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+    border-color: var(--color-danger-text);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger-text) 20%, transparent);
   }
 `;
 
 export const TextArea = styled.textarea`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 14px;
   min-height: 80px;
@@ -98,43 +98,43 @@ export const TextArea = styled.textarea`
 
   &:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
   }
 
   &:hover {
-    border-color: #ccc;
+    border-color: color-mix(in oklab, var(--color-border) 60%, var(--color-text-secondary));
   }
 
   &.error {
-    border-color: #ff4757;
-    box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+    border-color: var(--color-danger-text);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger-text) 20%, transparent);
   }
 `;
 
 export const Select = styled.select`
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: var(--color-surface);
   transition: all 0.3s ease;
   box-sizing: border-box;
 
   &:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
   }
 
   &:hover {
-    border-color: #ccc;
+    border-color: color-mix(in oklab, var(--color-border) 60%, var(--color-text-secondary));
   }
 
   &.error {
-    border-color: #ff4757;
-    box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+    border-color: var(--color-danger-text);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger-text) 20%, transparent);
   }
 `;
 
@@ -143,8 +143,8 @@ export const FormActions = styled.div`
   gap: 12px;
   justify-content: flex-end;
   padding: 16px 20px;
-  border-top: 1px solid #eee;
-  background: white;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   margin-top: auto;
 
   @media (hover: none) and (pointer: coarse), (max-width: 768px) {
@@ -187,35 +187,35 @@ export const Button = styled.button`
 `;
 
 export const PrimaryButton = styled(Button)`
-  background: linear-gradient(45deg, #667eea, #764ba2);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(45deg, var(--brand-gradient-start), var(--brand-gradient-end));
+  color: #fff;
+  box-shadow: 0 4px 15px color-mix(in oklab, var(--color-primary) 30%, transparent);
 
   &:hover:not(:disabled) {
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px color-mix(in oklab, var(--brand-gradient-start) 40%, transparent);
   }
 `;
 
 export const SecondaryButton = styled(Button)`
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
+  background: color-mix(in oklab, var(--color-surface) 80%, var(--color-text-secondary));
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 
   &:hover:not(:disabled) {
-    background: #eeeeee;
-    border-color: #ccc;
+    background: color-mix(in oklab, var(--color-surface) 70%, var(--color-text-secondary));
+    border-color: color-mix(in oklab, var(--color-border) 80%, var(--color-text-secondary));
   }
 `;
 
 export const ErrorMessage = styled.div`
-  color: #ff4757;
+  color: var(--color-danger-text);
   font-size: 12px;
   margin-top: 4px;
   margin-bottom: 8px;
 `;
 
 export const SuccessMessage = styled.div`
-  color: #2ed573;
+  color: var(--color-success-text);
   font-size: 12px;
   margin-top: 4px;
   margin-bottom: 8px;

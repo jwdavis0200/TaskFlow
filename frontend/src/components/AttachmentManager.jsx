@@ -11,26 +11,26 @@ import {
 
 // Styled components
 const AttachmentContainer = styled.div`
-  border: 2px dashed #e0e0e0;
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   padding: 12px;
   transition: all 0.3s ease;
   
   &:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
+    border-color: var(--color-primary);
+    background: var(--color-surface-elevated-2);
   }
   
   &.dragover {
-    border-color: #667eea;
-    background: #f0f4ff;
+    border-color: var(--color-primary);
+    background: var(--color-surface-elevated-1);
   }
 `;
 
 const AttachmentTrigger = styled.button`
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--color-primary);
   font-size: 14px;
   cursor: pointer;
   padding: 4px 0;
@@ -59,7 +59,7 @@ const AttachmentItem = styled.div`
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: #f5f5f5;
+  background: var(--color-surface-elevated-2);
   border-radius: 6px;
   margin-bottom: 4px;
   font-size: 13px;
@@ -80,19 +80,19 @@ const FileName = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #333;
+  color: var(--color-text-primary);
   font-weight: 500;
 `;
 
 const FileSize = styled.span`
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 11px;
 `;
 
 const ProgressBar = styled.div`
   width: 60px;
   height: 4px;
-  background: #e0e0e0;
+  background: var(--color-border);
   border-radius: 2px;
   overflow: hidden;
   
@@ -100,7 +100,7 @@ const ProgressBar = styled.div`
     content: '';
     display: block;
     height: 100%;
-    background: #667eea;
+    background: var(--color-primary);
     width: ${props => props.progress || 0}%;
     transition: width 0.3s ease;
   }
@@ -115,29 +115,29 @@ const ActionButton = styled.button`
   font-size: 12px;
   
   &:hover {
-    background: #e0e0e0;
+    background: var(--color-surface-elevated-1);
   }
   
   &.delete {
-    color: #dc3545;
+    color: var(--color-danger-text);
   }
   
   &.download {
-    color: #667eea;
+    color: var(--color-primary);
   }
 `;
 
 const ErrorMessage = styled.div`
-  color: #dc3545;
+  color: var(--color-danger-text);
   font-size: 12px;
   margin-top: 4px;
   padding: 4px 8px;
-  background: #ffebee;
+  background: var(--color-danger-bg);
   border-radius: 4px;
 `;
 
 const AttachmentCounter = styled.span`
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: normal;
   margin-left: 8px;
@@ -388,11 +388,11 @@ const AttachmentManager = ({
               )}
               
               {pendingFile.status === 'ready' && (
-                <span style={{ color: '#667eea', fontSize: '11px' }}>Ready</span>
+                <span style={{ color: 'var(--color-primary)', fontSize: '11px' }}>Ready</span>
               )}
               
               {pendingFile.status === 'error' && (
-                <span style={{ color: '#dc3545', fontSize: '11px' }}>Error</span>
+                <span style={{ color: 'var(--color-danger-text)', fontSize: '11px' }}>Error</span>
               )}
               
               <ActionButton 

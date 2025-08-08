@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import { Assignment } from '@mui/icons-material';
+import { Assignment, Settings } from '@mui/icons-material';
 import { useStore } from '../store';
 import ProjectsList from './ProjectsList';
 import InvitationsPanel from './InvitationsPanel';
 import Modal from './common/Modal';
 import ProjectForm from './ProjectForm';
+import SettingsPanel from './SettingsPanel';
 import { HiMenuAlt2, HiOutlineLogout } from 'react-icons/hi';
 
 const SidebarContainer = styled.div`
@@ -13,8 +14,8 @@ const SidebarContainer = styled.div`
   top: 0;
   left: 0;
   width: ${props => props.isOpen ? '320px' : '0'};
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-right: ${props => props.isOpen ? '1px solid #e2e8f0' : 'none'};
+  background: var(--sidebar-bg);
+  border-right: ${props => props.isOpen ? '1px solid var(--color-border)' : 'none'};
   padding: ${props => props.isOpen ? '20px' : '0'};
   height: 100vh;
   overflow: hidden;
@@ -29,7 +30,7 @@ const SidebarContainer = styled.div`
     width: 320px;
     transform: translateX(${props => props.isOpen ? '0' : '-100%'});
     padding-bottom: 64px;
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid var(--color-border);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   }
   
@@ -39,17 +40,17 @@ const SidebarContainer = styled.div`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--scrollbar-track);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: color-mix(in srgb, var(--scrollbar-thumb) 80%, var(--color-text-secondary));
   }
 `;
 
@@ -60,7 +61,7 @@ const ToggleButton = styled.button`
   width: 40px;
   height: 40px;
   background: transparent;
-  color: #333;
+  color: var(--sidebar-text);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -73,7 +74,7 @@ const ToggleButton = styled.button`
   z-index: 1001;
   
   &:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: color-mix(in oklab, currentColor 10%, transparent);
     transform: translateY(-1px);
   }
   
@@ -97,7 +98,7 @@ const FloatingLogoutButton = styled.button`
   width: 40px;
   height: 40px;
   background: transparent;
-  color: #374151;
+  color: var(--sidebar-text);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -112,7 +113,7 @@ const FloatingLogoutButton = styled.button`
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
   
   &:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: color-mix(in oklab, currentColor 10%, transparent);
     transform: translateY(-1px);
   }
   
@@ -128,7 +129,7 @@ const FloatingLogoutButton = styled.button`
 const SidebarHeader = styled.div`
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   position: relative;
 `;
 
@@ -142,7 +143,7 @@ const SidebarHeaderTop = styled.div`
 const SidebarTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--sidebar-text);
   margin: 0;
   display: flex;
   align-items: center;
@@ -158,11 +159,34 @@ const TitleIcon = styled.span`
   font-size: 24px;
 `;
 
+const SettingsButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  border: none;
+  background: transparent;
+  color: var(--sidebar-text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    background: color-mix(in oklab, currentColor 10%, transparent);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
 const AddButton = styled.button`
   width: 100%;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -176,9 +200,9 @@ const AddButton = styled.button`
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 
   &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: linear-gradient(135deg, var(--brand-gradient-end) 0%, var(--brand-gradient-start) 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 8px color-mix(in oklab, var(--color-primary) 40%, transparent);
   }
 
   &:active {
@@ -199,6 +223,7 @@ const Sidebar = () => {
   };
 
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleCreateProject = () => {
     setShowCreateProjectModal(true);
@@ -206,6 +231,14 @@ const Sidebar = () => {
 
   const handleCloseProjectModal = () => {
     setShowCreateProjectModal(false);
+  };
+
+  const handleOpenSettings = () => {
+    setShowSettingsModal(true);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettingsModal(false);
   };
 
   // Handle keyboard navigation
@@ -255,6 +288,9 @@ const Sidebar = () => {
             <SidebarTitle>
               <TitleIcon><Assignment /></TitleIcon>
               Projects
+              <SettingsButton aria-label="Open settings" title="Settings" onClick={handleOpenSettings}>
+                <Settings fontSize="small" />
+              </SettingsButton>
             </SidebarTitle>
           </SidebarHeaderTop>
           <AddButton onClick={handleCreateProject}>
@@ -273,6 +309,13 @@ const Sidebar = () => {
         onClose={handleCloseProjectModal}
       >
         <ProjectForm onClose={handleCloseProjectModal} />
+      </Modal>
+
+      <Modal 
+        isOpen={showSettingsModal}
+        onClose={handleCloseSettings}
+      >
+        <SettingsPanel onClose={handleCloseSettings} />
       </Modal>
     </>
   );

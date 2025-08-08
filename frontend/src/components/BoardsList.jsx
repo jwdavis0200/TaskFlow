@@ -12,22 +12,22 @@ const BoardsContainer = styled.div`
 const BoardItem = styled.div`
   padding: 12px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface-elevated-2);
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
-  color: #475569;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: relative;
   
   &:hover {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    color: #1e40af;
+    background: color-mix(in oklab, var(--color-primary) 12%, var(--color-surface-elevated-2));
+    color: var(--color-primary);
     transform: translateX(4px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 2px 8px color-mix(in oklab, var(--color-primary) 30%, transparent);
   }
 `;
 
@@ -61,30 +61,30 @@ const ActionButton = styled.button`
 `;
 
 const EditButton = styled(ActionButton)`
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: color-mix(in oklab, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
 
   &:hover {
-    background: #dbeafe;
+    background: color-mix(in oklab, var(--color-primary) 25%, transparent);
   }
 `;
 
 const DeleteButton = styled(ActionButton)`
-  background: #fef2f2;
-  color: #dc2626;
+  background: color-mix(in oklab, var(--color-danger-text) 15%, transparent);
+  color: var(--color-danger-text);
 
   &:hover {
-    background: #fee2e2;
+    background: color-mix(in oklab, var(--color-danger-text) 25%, transparent);
   }
 `;
 
 const EmptyState = styled.div`
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-text-secondary);
   text-align: center;
   padding: 16px;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
   border-radius: 8px;
   margin-top: 8px;
 `;

@@ -1,0 +1,79 @@
+:root {
+  color-scheme: light;
+
+  /* Core */
+  --color-bg: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-elevated-1: #ffffff;
+  --color-surface-elevated-2: #f8fafc;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-border: #e5e7eb;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Brand */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+
+  /* Status */
+  --color-success-bg: #e8f5e8; 
+  --color-success-text: #2e7d32;
+  --color-warning-bg: #fff3e0; 
+  --color-warning-text: #ef6c00;
+  --color-danger-bg: #ffebee;  
+  --color-danger-text: #c62828;
+
+  /* UI specifics */
+  --sidebar-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --sidebar-text: #1e293b;
+
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+
+  /* App background should match original design (purple gradient) */
+  --app-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* Brand gradients matching existing design */
+  --brand-gradient-start: #667eea;
+  --brand-gradient-end: #764ba2;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Core */
+  --color-bg: #0f172a;
+  --color-surface: #111827;
+  --color-surface-elevated-1: #1f2937;
+  --color-surface-elevated-2: #0b1220;
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+  --color-border: #1f2937;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Brand */
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
+
+  /* Status */
+  --color-success-bg: #163422; 
+  --color-success-text: #86efac;
+  --color-warning-bg: #2a2016; 
+  --color-warning-text: #fbbf24;
+  --color-danger-bg: #2a171a;  
+  --color-danger-text: #f87171;
+
+  /* UI specifics */
+  --sidebar-bg: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  --sidebar-text: #e5e7eb;
+
+  --scrollbar-track: #111827;
+  --scrollbar-thumb: #374151;
+
+  --app-background: linear-gradient(135deg, #0b1021 0%, #1a1030 100%);
+  /* Dark mode brand gradient slightly deeper to reduce glare */
+  --brand-gradient-start: #4f46e5; /* indigo-600 */
+  --brand-gradient-end: #7c3aed;   /* violet-600 */
+}
+
+
