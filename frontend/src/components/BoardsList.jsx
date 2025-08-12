@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import styled from '@emotion/styled';
 import { BarChart, Edit, Delete } from '@mui/icons-material';
 import { useStore } from '../store';
+import Modal from './common/Modal';
+import BoardForm from './BoardForm';
 
 const BoardsContainer = styled.div`
   display: flex;
@@ -90,11 +93,11 @@ const EmptyState = styled.div`
 `;
 
 const BoardItemComponent = ({ board, projectId }) => {
+  const [showEditModal, setShowEditModal] = useState(false);
+  
   const {
     setSelectedBoard,
-    updateBoard,
     deleteBoard,
-    loadBoards,
     projects,
     setSelectedProject
   } = useStore();
@@ -112,21 +115,13 @@ const BoardItemComponent = ({ board, projectId }) => {
     }
   };
 
-  const handleEditBoard = async (e) => {
+  const handleEditBoard = (e) => {
     e.stopPropagation();
-    const newName = prompt('Enter new board name:', board.name);
-    if (newName && newName.trim() && newName !== board.name) {
-      try {
-        await updateBoard(projectId, board._id, {
-          ...board,
-          name: newName.trim()
-        });
-        // Reload boards to reflect changes
-        loadBoards(projectId);
-      } catch {
-        alert('Failed to update board. Please try again.');
-      }
-    }
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
   };
 
   const handleDeleteBoard = async (e) => {
@@ -142,20 +137,31 @@ const BoardItemComponent = ({ board, projectId }) => {
   };
   
   return (
-    <BoardItem onClick={handleBoardSelect}>
-      <BoardName>
-        <BarChart style={{ marginRight: '8px' }} />
-        {board.name}
-      </BoardName>
-      <BoardActions>
-        <EditButton onClick={handleEditBoard} title="Edit Board">
-          <Edit fontSize="small" />
-        </EditButton>
-        <DeleteButton onClick={handleDeleteBoard} title="Delete Board">
-          <Delete fontSize="small" />
-        </DeleteButton>
-      </BoardActions>
-    </BoardItem>
+    <>
+      <BoardItem onClick={handleBoardSelect}>
+        <BoardName>
+          <BarChart style={{ marginRight: '8px' }} />
+          {board.name}
+        </BoardName>
+        <BoardActions>
+          <EditButton onClick={handleEditBoard} title="Edit Board">
+            <Edit fontSize="small" />
+          </EditButton>
+          <DeleteButton onClick={handleDeleteBoard} title="Delete Board">
+            <Delete fontSize="small" />
+          </DeleteButton>
+        </BoardActions>
+      </BoardItem>
+
+      {/* Edit Board Modal */}
+      <Modal isOpen={showEditModal} onClose={handleCloseEditModal}>
+        <BoardForm 
+          board={board} 
+          projectId={projectId} 
+          onClose={handleCloseEditModal} 
+        />
+      </Modal>
+    </>
   );
 };
 
