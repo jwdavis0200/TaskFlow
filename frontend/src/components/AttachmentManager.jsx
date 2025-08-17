@@ -347,6 +347,7 @@ const AttachmentManager = ({
               <FileSize>{formatFileSize(attachment.fileSize || 0)}</FileSize>
               {taskId && (
                 <ActionButton 
+                  type="button"
                   className="download"
                   onClick={() => handleDownload(attachment)}
                   title="Download"
@@ -355,6 +356,7 @@ const AttachmentManager = ({
                 </ActionButton>
               )}
               <ActionButton 
+                type="button"
                 className="delete"
                 onClick={() => handleDelete(attachment, false)}
                 title="Delete"
@@ -398,6 +400,7 @@ const AttachmentManager = ({
               )}
               
               <ActionButton 
+                type="button"
                 className="delete"
                 onClick={() => handleDelete(pendingFile, true)}
                 title="Remove"
