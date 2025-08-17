@@ -20,7 +20,7 @@ export const ALLOWED_FILE_TYPES = {
 };
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-export const MAX_FILES_PER_TASK = 5;
+export const MAX_FILES_PER_TASK = 50;
 
 /**
  * Validate a file before upload

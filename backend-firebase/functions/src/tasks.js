@@ -457,14 +457,14 @@ exports.generateAttachmentUploadURL = onCall(async (request) => {
     
     // Check attachment limits
     const existingAttachments = taskData.attachments || [];
-    if (existingAttachments.length >= 5) {
+    if (existingAttachments.length >= 50) {
       console.error('generateAttachmentUploadURL: Attachment limit exceeded:', {
         userId,
         taskId,
         existingCount: existingAttachments.length,
         limit: 5
       });
-      throw new HttpsError('failed-precondition', 'Maximum 5 attachments per task allowed');
+      throw new HttpsError('failed-precondition', 'Maximum 50 attachments per task allowed');
     }
     
     // Generate deterministic UUID based on task and file info

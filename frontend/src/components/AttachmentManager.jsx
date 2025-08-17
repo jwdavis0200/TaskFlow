@@ -8,6 +8,7 @@ import {
   deleteTaskAttachment,
   downloadAttachment
 } from '../services/storage';
+import { FaFileUpload } from "react-icons/fa";
 
 // Styled components
 const AttachmentContainer = styled.div`
@@ -316,10 +317,11 @@ const AttachmentManager = ({
           if (disabled) return;
           fileInputRef.current?.click();
         }}
-        disabled={disabled || totalFiles >= 5}
+        disabled={disabled || totalFiles >= 50}
       >
-        📎 {totalFiles >= 5 ? 'Maximum files reached' : 'Add files (max 10MB each)'}
-        <AttachmentCounter>({totalFiles}/5)</AttachmentCounter>
+        <FaFileUpload/>
+        {totalFiles >= 50 ? 'Maximum files reached' : 'Add files (max 10MB each)'}
+        <AttachmentCounter>({totalFiles}/50)</AttachmentCounter>
       </AttachmentTrigger>
       
       {errors.length > 0 && (
