@@ -622,15 +622,19 @@ exports.getMyInvitations = onCall(async (request) => {
   const db = admin.firestore();
   
   try {
+    const now = Timestamp.fromDate(new Date());
+    
     // Get invitations by user ID or email
     const invitationsByUserId = await db.collection('invitations')
       .where('inviteeUserId', '==', userId)
       .where('status', '==', 'pending')
+      .where('expiresAt', '>', now)
       .get();
       
     const invitationsByEmail = await db.collection('invitations')
       .where('inviteeEmail', '==', userEmail)
       .where('status', '==', 'pending')
+      .where('expiresAt', '>', now)
       .get();
     
     // Combine and deduplicate
