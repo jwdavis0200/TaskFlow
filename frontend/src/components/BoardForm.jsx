@@ -113,18 +113,6 @@ const BoardForm = ({ board, projectId, onClose }) => {
           {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
         </FormGroup>
 
-        <div style={{ 
-          background: "#f0f8ff", 
-          border: "1px solid #cce7ff", 
-          borderRadius: "8px", 
-          padding: "12px", 
-          marginBottom: "16px",
-          fontSize: "14px",
-          color: "#0066cc"
-        }}>
-          <strong>Default Columns:</strong> Your board will be created with "To Do", "In Progress", and "Done" columns.
-        </div>
-
         {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 
         <FormActions>

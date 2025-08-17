@@ -5,6 +5,7 @@ import Timer from "./Timer";
 import ConfirmationModal from "./common/ConfirmationModal";
 import { useStore } from "../store";
 import { formatDateForDisplay } from "../utils/dateUtils";
+import { GrAttachment } from "react-icons/gr";
 
 const CardContainer = styled.div`
   background: var(--color-surface-elevated-2);
@@ -280,7 +281,7 @@ const TaskCard = ({ task, onEdit, columnId, projectId, boardId }) => {
         )}
         {task.attachments && task.attachments.length > 0 && (
           <MetaTag style={{ background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}>
-            📎 {task.attachments.length}
+            <GrAttachment/> {task.attachments.length}
           </MetaTag>
         )}
       </TaskMeta>
