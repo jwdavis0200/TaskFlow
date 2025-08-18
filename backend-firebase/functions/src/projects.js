@@ -407,11 +407,13 @@ exports.inviteUserToProject = onCall(async (request) => {
       throw new HttpsError('permission-denied', 'Only project owner can invite admins');
     }
 
-    // Check if an invitation has already been sent to this email for this project
+    // Check if an invitation has already been sent to this email for this project (non-expired only)
+    const now = Timestamp.now();
     const existingInvitation = await db.collection('invitations')
       .where('projectId', '==', projectId)
       .where('inviteeEmail', '==', email.toLowerCase())
       .where('status', '==', 'pending')
+      .where('expiresAt', '>', now)
       .get();
     if (!existingInvitation.empty) {
       throw new HttpsError('already-exists', 'An invitation has already been sent to this email for this project.');
@@ -504,9 +506,9 @@ exports.acceptProjectInvitation = onCall(async (request) => {
     }
     
     // Check if invitation expired
-    const now = new Date();
-    const expiresAt = invitation.expiresAt.toDate ? invitation.expiresAt.toDate() : new Date(invitation.expiresAt);
-    if (now > expiresAt) {
+    const now = Timestamp.now().toMillis();
+    const expiresAt = invitation.expiresAt.toMillis();
+    if (now >= expiresAt) {
       throw new HttpsError('deadline-exceeded', 'Invitation has expired');
     }
     
@@ -591,9 +593,9 @@ exports.declineProjectInvitation = onCall(async (request) => {
     }
     
     // Check if invitation expired
-    const now = new Date();
-    const expiresAt = invitation.expiresAt.toDate ? invitation.expiresAt.toDate() : new Date(invitation.expiresAt);
-    if (now > expiresAt) {
+    const now = Timestamp.now().toMillis();
+    const expiresAt = invitation.expiresAt.toMillis();
+    if (now >= expiresAt) {
       throw new HttpsError('deadline-exceeded', 'Invitation has expired');
     }
     
@@ -622,7 +624,7 @@ exports.getMyInvitations = onCall(async (request) => {
   const db = admin.firestore();
   
   try {
-    const now = Timestamp.fromDate(new Date());
+    const now = Timestamp.now();
     
     // Get invitations by user ID or email
     const invitationsByUserId = await db.collection('invitations')
