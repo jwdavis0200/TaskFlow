@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "taskflow-pro-dev",
+    "default": "taskflow-pro-dev-ebf48",
     "production": "taskflow-production"
   }
 }
