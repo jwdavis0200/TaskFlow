@@ -1,4 +1,5 @@
 import { useState } from "react";
+import styled from "@emotion/styled";
 import { useStore } from "../store";
 import {
   FormContainer,
@@ -17,6 +18,35 @@ import {
 import LoadingSpinner from "./common/LoadingSpinner";
 import ProjectMembersModal from './ProjectMembersModal';
 
+const MembersContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+  }
+`;
+
+const MemberCount = styled.span`
+  color: var(--color-text-secondary, #666);
+  font-size: 0.9rem;
+`;
+
+const ManageMembersButton = styled(Button)`
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  background: var(--color-neutral-600, #6c757d);
+  color: white;
+  min-height: 44px;
+  
+  @media (min-width: 768px) {
+    min-height: auto;
+    padding: 6px 12px;
+  }
+`;
 
 const ProjectForm = ({ project, onClose }) => {
   const addProject = useStore((state) => state.addProject);
@@ -113,28 +143,17 @@ const ProjectForm = ({ project, onClose }) => {
           {project && (
             <FormGroup>
               <Label>Project Members</Label>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px',
-                padding: '10px 0'
-              }}>
-                <span style={{ color: '#666', fontSize: '0.9rem' }}>
+              <MembersContainer>
+                <MemberCount>
                   {project.members?.length || 1} member{(project.members?.length || 1) !== 1 ? 's' : ''}
-                </span>
-                <Button
+                </MemberCount>
+                <ManageMembersButton
                   type="button"
                   onClick={() => setShowMembersModal(true)}
-                  style={{ 
-                    padding: '6px 12px', 
-                    fontSize: '0.85rem',
-                    background: '#6c757d',
-                    color: 'white'
-                  }}
                 >
                   Manage Members
-                </Button>
-              </div>
+                </ManageMembersButton>
+              </MembersContainer>
             </FormGroup>
           )}
 
