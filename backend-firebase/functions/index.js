@@ -1,9 +1,13 @@
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin SDK with Application Default Credentials for signed URL generation
+// Use environment variable or fallback to production for storage bucket
+const projectId = process.env.GCLOUD_PROJECT || 'taskflow-production';
+const storageBucket = process.env.GCLOUD_PROJECT ? `${process.env.GCLOUD_PROJECT}.firebasestorage.app` : 'taskflow-production.firebasestorage.app';
+
 admin.initializeApp({
-  projectId: 'taskflow-production',
-  storageBucket: 'taskflow-production.firebasestorage.app',
+  projectId: projectId,
+  storageBucket: storageBucket,
   credential: admin.credential.applicationDefault()
 });
 
