@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import Select from 'react-select';
 import { FaTimes, FaUserPlus, FaTrash, FaCrown, FaUser } from 'react-icons/fa';
 import { useStore } from '../store';
 import Modal from './common/Modal';
 import InviteMemberForm from './InviteMemberForm';
 import ConfirmationModal from './common/ConfirmationModal';
+import { PrimaryButton } from './common/FormComponents';
 
 const ModalContentInner = styled.div`
   width: 100%;
   padding: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -81,8 +82,8 @@ const MembersList = styled.div`
 
 const MemberItem = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 16px;
   padding: 16px 20px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -90,6 +91,13 @@ const MemberItem = styled.div`
   background: var(--color-surface-elevated-1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
   
   &:hover {
     background: var(--color-surface-elevated-2);
@@ -138,7 +146,12 @@ const MemberRole = styled.span`
 
 const MemberActions = styled.div`
   display: flex;
+  flex-direction: column;
   gap: 8px;
+  
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -167,6 +180,96 @@ const ActionButton = styled.button`
       background: linear-gradient(45deg, color-mix(in oklab, var(--color-danger-text) 90%, #000), var(--color-danger-text));
       color: #fff;
       box-shadow: 0 4px 15px color-mix(in oklab, var(--color-danger-text) 30%, transparent);
+    }
+  }
+`;
+
+const StyledRoleSelect = styled(Select)`
+  flex: 1;
+  
+  @media (min-width: 768px) {
+    flex: none;
+    margin-right: 8px;
+    min-width: 120px;
+  }
+  
+  .react-select__control {
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    font-size: 14px;
+    box-shadow: none;
+    
+    @media (min-width: 768px) {
+      min-height: auto;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    &:hover {
+      border-color: var(--color-text-secondary);
+    }
+    
+    &--is-focused {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
+    }
+  }
+  
+  .react-select__value-container {
+    padding: 12px 16px;
+    
+    @media (min-width: 768px) {
+      padding: 4px 8px;
+    }
+  }
+  
+  .react-select__single-value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+  
+  .react-select__dropdown-indicator {
+    color: var(--color-text-secondary);
+  }
+  
+  .react-select__menu {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    
+    @media (min-width: 768px) {
+      border-radius: 4px;
+    }
+  }
+  
+  .react-select__option {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    
+    @media (min-width: 768px) {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    
+    &:hover {
+      background: var(--color-surface-elevated-1);
+    }
+    
+    &--is-selected {
+      background: var(--color-primary);
+      color: white;
+    }
+    
+    &--is-focused {
+      background: var(--color-surface-elevated-1);
     }
   }
 `;
@@ -249,6 +352,8 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
   const [isChangingRole, setIsChangingRole] = useState(false);
   const [invitationToSend, setInvitationToSend] = useState(null);
   const [invitationError, setInvitationError] = useState(null);
+  // Track updated roles locally until modal closes
+  const [updatedRoles, setUpdatedRoles] = useState({});
 
   useEffect(() => {
     if (isOpen && project) {
@@ -298,6 +403,11 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
     setIsChangingRole(true);
     try {
       await changeUserRole(project._id, memberToChangeRole.uid, newRole);
+      // Update local state immediately for UI responsiveness
+      setUpdatedRoles(prev => ({
+        ...prev,
+        [memberToChangeRole.uid]: newRole
+      }));
       setMemberToChangeRole(null);
       setNewRole('');
       // Reload members to get updated role info
@@ -316,17 +426,15 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
 
   const getMemberRole = (member) => {
     if (project?.owner === member.uid) return 'owner';
+    
+    // Check if role was updated locally first
+    if (updatedRoles[member.uid]) {
+      return updatedRoles[member.uid];
+    }
+    
     return project?.memberRoles?.[member.uid] || 'viewer';
   };
   
-  // Debug logging
-  console.log('ProjectMembersModal Debug:', {
-    project,
-    user,
-    isOwner,
-    projectMembers,
-    collaborationLoading
-  });
 
   if (!isOpen) return null;
 
@@ -387,27 +495,113 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                           <MemberActions>
                             {/* Role change dropdown for owner/admin */}
                             {(isOwner || (getCurrentUserRole() === 'admin' && getMemberRole(member) !== 'admin')) && (
-                              <select
-                                value={getMemberRole(member)}
-                                onChange={(e) => {
-                                  const selectedRole = e.target.value;
-                                  if (selectedRole !== getMemberRole(member)) {
+                              <StyledRoleSelect
+                                value={{ 
+                                  value: getMemberRole(member), 
+                                  label: getMemberRole(member).charAt(0).toUpperCase() + getMemberRole(member).slice(1) 
+                                }}
+                                onChange={(selectedOption) => {
+                                  console.log('onChange triggered!', selectedOption);
+                                  if (selectedOption && selectedOption.value !== getMemberRole(member)) {
                                     setMemberToChangeRole(member);
-                                    setNewRole(selectedRole);
+                                    setNewRole(selectedOption.value);
                                   }
                                 }}
-                                style={{
-                                  marginRight: '8px',
-                                  padding: '4px 8px',
-                                  border: '1px solid #ddd',
-                                  borderRadius: '4px',
-                                  fontSize: '12px'
+                                options={[
+                                  { value: 'viewer', label: 'Viewer' },
+                                  { value: 'editor', label: 'Editor' },
+                                  ...(isOwner ? [{ value: 'admin', label: 'Admin' }] : [])
+                                ]}
+                                isSearchable={false}
+                                isDisabled={false}
+                                menuPlacement="auto"
+                                menuPosition="absolute"
+                                menuPortalTarget={document.body}
+                                styles={{
+                                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                  control: (base, state) => ({
+                                    ...base,
+                                    minHeight: '44px',
+                                    border: `1px solid var(--color-border)`,
+                                    borderRadius: '8px',
+                                    backgroundColor: 'var(--color-surface)',
+                                    fontSize: '14px',
+                                    boxShadow: state.isFocused 
+                                      ? '0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent)'
+                                      : 'none',
+                                    borderColor: state.isFocused 
+                                      ? 'var(--color-primary)' 
+                                      : 'var(--color-border)',
+                                    '&:hover': {
+                                      borderColor: state.isFocused 
+                                        ? 'var(--color-primary)' 
+                                        : 'var(--color-text-secondary)'
+                                    },
+                                    '@media (min-width: 768px)': {
+                                      minHeight: 'auto',
+                                      borderRadius: '4px',
+                                      fontSize: '12px'
+                                    }
+                                  }),
+                                  valueContainer: (base) => ({
+                                    ...base,
+                                    padding: '12px 16px',
+                                    '@media (min-width: 768px)': {
+                                      padding: '4px 8px'
+                                    }
+                                  }),
+                                  singleValue: (base) => ({
+                                    ...base,
+                                    color: 'var(--color-text-primary)',
+                                    fontWeight: '500'
+                                  }),
+                                  dropdownIndicator: (base) => ({
+                                    ...base,
+                                    color: 'var(--color-text-secondary)',
+                                    '&:hover': {
+                                      color: 'var(--color-text-primary)'
+                                    }
+                                  }),
+                                  indicatorSeparator: (base) => ({
+                                    ...base,
+                                    backgroundColor: 'var(--color-border)'
+                                  }),
+                                  menu: (base) => ({
+                                    ...base,
+                                    backgroundColor: 'var(--color-surface)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+                                    '@media (min-width: 768px)': {
+                                      borderRadius: '4px'
+                                    }
+                                  }),
+                                  option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected 
+                                      ? 'var(--color-primary)' 
+                                      : state.isFocused 
+                                        ? 'var(--color-surface-elevated-1)'
+                                        : 'var(--color-surface)',
+                                    color: state.isSelected 
+                                      ? 'white' 
+                                      : 'var(--color-text-primary)',
+                                    padding: '12px 16px',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    '@media (min-width: 768px)': {
+                                      padding: '8px 12px',
+                                      fontSize: '12px'
+                                    },
+                                    '&:hover': {
+                                      backgroundColor: state.isSelected 
+                                        ? 'var(--color-primary-hover)' 
+                                        : 'var(--color-surface-elevated-1)'
+                                    }
+                                  })
                                 }}
-                              >
-                                <option value="viewer">Viewer</option>
-                                <option value="editor">Editor</option>
-                                {isOwner && <option value="admin">Admin</option>}
-                              </select>
+                              />
                             )}
                             
                             <ActionButton 
@@ -443,18 +637,12 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                         loading={collaborationLoading}
                       />
                     ) : (
-                      <button
+                      <PrimaryButton
                         onClick={() => {
                           setShowInviteForm(true);
                           setInvitationError(null);
                         }}
                         style={{
-                          background: '#007bff',
-                          color: 'white',
-                          border: 'none',
-                          padding: '12px 24px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '8px'
@@ -462,7 +650,7 @@ const ProjectMembersModal = ({ isOpen, onClose, project }) => {
                       >
                         <FaUserPlus />
                         Invite Member
-                      </button>
+                      </PrimaryButton>
                     )}
                     {invitationError && <ErrorMessage>{invitationError}</ErrorMessage>}
                   </InviteSection>
