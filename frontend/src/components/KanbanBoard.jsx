@@ -354,7 +354,7 @@ const KanbanBoard = () => {
           isOpen={showTaskForm} 
           onClose={handleCloseTaskForm}
         >
-          <TaskForm task={selectedTask} onClose={handleCloseTaskForm} />
+          <TaskForm taskId={selectedTask?._id} onClose={handleCloseTaskForm} />
         </Modal>
         <ChatModal
           isOpen={isChatOpen}

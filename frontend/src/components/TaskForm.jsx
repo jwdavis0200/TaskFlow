@@ -21,11 +21,20 @@ import AttachmentManager from "./AttachmentManager";
 import { uploadTaskAttachment } from "../services/storage";
 
 
-const TaskForm = ({ task, onClose }) => {
+const TaskForm = ({ taskId = null, onClose }) => {
   const addTask = useStore((state) => state.addTask);
   const updateTask = useStore((state) => state.updateTask);
   const selectedBoard = useStore((state) => state.selectedBoard);
   const projects = useStore((state) => state.projects);
+  
+  // Get task from store - single source of truth
+  const task = useStore((state) => {
+    if (!selectedBoard || !taskId) return null;
+    return state.boards
+      .find(b => b._id === selectedBoard._id)
+      ?.columns?.flatMap(c => c.tasks)
+      ?.find(t => t._id === taskId);
+  });
 
   const [pendingFiles, setPendingFiles] = useState([]);
   const [title, setTitle] = useState("");
@@ -286,7 +295,7 @@ const TaskForm = ({ task, onClose }) => {
         <FormGroup>
           <Label htmlFor="attachments">Attachments</Label>
           <AttachmentManager
-            taskId={task?._id}
+            taskId={taskId}
             boardId={selectedBoard?._id}
             existingAttachments={task?.attachments || []}
             disabled={isSubmitting}
