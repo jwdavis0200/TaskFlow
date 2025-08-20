@@ -24,6 +24,7 @@ import { uploadTaskAttachment } from "../services/storage";
 const TaskForm = ({ taskId = null, onClose }) => {
   const addTask = useStore((state) => state.addTask);
   const updateTask = useStore((state) => state.updateTask);
+  const updateTaskAttachments = useStore((state) => state.updateTaskAttachments);
   const selectedBoard = useStore((state) => state.selectedBoard);
   const projects = useStore((state) => state.projects);
   
@@ -49,14 +50,19 @@ const TaskForm = ({ taskId = null, onClose }) => {
   const clearAttachmentErrors = () => setAttachmentErrors([]);
   
   // Handle file uploads callback with progress tracking and proper error handling
-  const handleUploadRequest = async (pendingFilesToUpload, taskId) => {
+  const handleUploadRequest = async (pendingFilesToUpload, uploadTaskId) => {
     const uploadErrors = [];
     const successfulUploads = [];
     
     for (const pendingFile of pendingFilesToUpload) {
       try {
-        const result = await uploadTaskAttachment(taskId, pendingFile.file, () => {
+        const result = await uploadTaskAttachment(uploadTaskId, pendingFile.file, () => {
         });
+        
+        // Update store immediately with the new attachment
+        if (selectedBoard?._id && result.attachment) {
+          updateTaskAttachments(selectedBoard._id, uploadTaskId, result.attachment);
+        }
         
         successfulUploads.push({ fileId: pendingFile.id, result });
         console.log("TaskForm: Successfully uploaded:", pendingFile.fileName);
